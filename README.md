@@ -9,6 +9,7 @@ Interactive demos of the **Greedy Spatial Navigation (GSN)** algorithm and its l
 > https://link.aps.org/doi/10.1103/PhysRevE.86.067103
 
 **Live demo (navigation):** https://lshlj82.github.io/greedy-navigator/
+
 **Live demo (optimizer):** https://lshlj82.github.io/greedy-navigator/GSN_optimizer.html
 
 *Demos created by Claude Sonnet 4.6.*
