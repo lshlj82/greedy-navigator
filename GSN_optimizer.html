@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GSN Layout Optimization via Simulated Annealing</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060c18;color:#b8cce0;font-family:'JetBrains Mono',monospace;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{padding:9px 18px;border-bottom:1px solid #0f2040;display:flex;align-items:baseline;gap:12px;flex-shrink:0}
+h1{font-size:12px;font-weight:600;letter-spacing:.06em;color:#ddeeff}
+.sub{font-size:9px;color:#1e3555}
+main{flex:1;display:flex;min-height:0}
+#cv-wrap{flex:1;position:relative;min-width:0;display:flex;flex-direction:column}
+.cv-row{flex:1;display:flex;min-height:0;position:relative}
+canvas.net{display:block;width:100%;height:100%}
+canvas.net.pick-mode{cursor:crosshair}
+.cv-label{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:8px;color:#1a3050;letter-spacing:.06em;pointer-events:none;white-space:nowrap}
+.cv-dg{position:absolute;top:8px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:600;letter-spacing:.04em;pointer-events:none;white-space:nowrap}
+.divider{height:1px;background:#0a1e38;flex-shrink:0}
+#flash{position:absolute;top:10px;right:10px;background:#001a0c;border:1px solid #34d399;color:#34d399;font-size:9px;padding:3px 9px;border-radius:2px;opacity:0;transition:opacity .4s;pointer-events:none;z-index:10}
+#panel{width:260px;flex-shrink:0;border-left:1px solid #0f2040;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;background:#040a14}
+.sec{padding:10px 13px;border-bottom:1px solid #091828;flex-shrink:0}
+.sh{font-size:7px;font-weight:600;letter-spacing:.2em;color:#142030;margin-bottom:7px;text-transform:uppercase}
+select{font-family:'JetBrains Mono',monospace;font-size:9px;background:#07101e;border:1px solid #122240;color:#4a7090;padding:4px 7px;border-radius:2px;width:100%;cursor:pointer;margin-bottom:4px}
+select:focus{outline:none;border-color:#1e4070}
+button{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;padding:5px 7px;border-radius:2px;border:1px solid;cursor:pointer;transition:all .1s;display:flex;align-items:center;gap:5px;white-space:nowrap}
+button:disabled{opacity:.2;cursor:default}
+button:not(:disabled):hover{opacity:.72}
+.b-run{background:#071510;border-color:#185040;color:#34d399}
+.b-gsn{background:#100a00;border-color:#4a3000;color:#fbbf24}
+.b-neu{background:#060e1c;border-color:#0f2035;color:#2a4560}
+.b-pick{background:#0a1020;border-color:#1e4080;color:#5090c8}
+.br{display:flex;gap:4px;margin-top:5px}
+.br button{flex:1;justify-content:center}
+.sl{display:flex;align-items:center;gap:7px;margin-top:5px}
+.sl span{font-size:8px;color:#102030;flex-shrink:0}
+input[type=range]{flex:1;accent-color:#2a5090;height:2px;cursor:pointer}
+.sg{display:grid;grid-template-columns:1fr auto;row-gap:3px;font-size:9px}
+.sg .l{color:#1a3050}.sg .v{text-align:right;color:#406880;font-weight:500}
+.sg .va{color:#34d399}.sg .sep{grid-column:1/-1;height:1px;background:#091828;margin:2px 0}
+.pb{display:inline-block;padding:2px 7px;border-radius:2px;font-size:8px;font-weight:600;letter-spacing:.08em}
+.ph{background:#1a0800;border:1px solid #6a2a00;color:#f97316}
+.pq{background:#00081a;border:1px solid #00285a;color:#60a5fa}
+.pd{background:#001208;border:1px solid #065f46;color:#34d399}
+.pi{background:#0a0a14;border:1px solid #1a2840;color:#3a5070}
+#chart-sec{padding:10px 13px 7px;display:flex;flex-direction:column;border-bottom:1px solid #091828;flex-shrink:0}
+#chart{width:100%;height:90px;display:block}
+.cleg{font-size:7px;color:#1a3050;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap}
+.gsn-tag{display:inline-block;padding:1px 5px;border-radius:2px;font-size:7px;font-weight:600}
+#status{padding:5px 13px;border-top:1px solid #091828;font-size:8px;color:#1a3555;flex-shrink:0;min-height:22px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Layout Optimization for Greedy Navigation</h1>
+  <span class="sub">Lee &amp; Holme · PRE 86, 067103 (2012) — Simulated Annealing</span>
+  <span class="sub" style="margin-left:auto;color:#162840">Demo by Claude Sonnet 4.6</span>
+</header>
+<main>
+<div id="cv-wrap">
+  <div class="cv-row" id="top-row">
+    <canvas class="net" id="nc-top"></canvas>
+    <div class="cv-label" id="lbl-top">current layout (optimizing…)</div>
+    <div class="cv-dg" id="dg-top" style="color:#34d399">—</div>
+    <div id="flash">★ new best</div>
+  </div>
+  <div class="divider"></div>
+  <div class="cv-row" id="bot-row">
+    <canvas class="net" id="nc-bot"></canvas>
+    <div class="cv-label">initial random layout</div>
+    <div class="cv-dg" id="dg-bot" style="color:#4a6888">—</div>
+  </div>
+</div>
+
+<div id="panel">
+  <div class="sec">
+    <div class="sh">Graph Model</div>
+    <select id="sel-graph">
+      <option value="ba">Barabási-Albert (N=25, m=1)</option>
+      <option value="ws">Watts-Strogatz (N=25, k=4, β=0.1)</option>
+      <option value="ring">1D Ring (N=20)</option>
+      <option value="grid">2D Grid (N=25, 5×5)</option>
+      <option value="karate">Karate Club (N=34)</option>
+    </select>
+    <div id="ginfo" style="font-size:8px;color:#1a3050">—</div>
+  </div>
+
+  <div class="sec">
+    <div class="sh">SA Parameters</div>
+    <div class="sg">
+      <span class="l">perturbation l</span><span class="v">0.30</span>
+      <span class="l">p_high (heating)</span><span class="v">0.20</span>
+      <span class="l">p_low (quenching)</span><span class="v">0 (frozen)</span>
+      <span class="l">T_H — heat steps</span><span class="v">60 MC</span>
+      <span class="l">T_L — quench limit</span><span class="v">25 MC</span>
+      <span class="l">T_HL — sessions</span><span class="v">6</span>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sh">SA Progress</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+      <span id="pbadge" class="pb pi">READY</span>
+      <span style="font-size:8px;color:#162840">session <span id="ssess">0</span>/6</span>
+    </div>
+    <div class="sg">
+      <span class="l">MC step</span><span class="v" id="smc">0</span>
+      <div class="sep"></div>
+      <span class="l" style="color:#206048">d (BFS shortest path)</span><span class="v va" id="sd">—</span>
+      <span class="l">d_g initial</span><span class="v" id="sdinit">—</span>
+      <span class="l">d_g current</span><span class="v" id="sdg">—</span>
+      <span class="l">d_g best</span><span class="v va" id="sdbest">—</span>
+      <div class="sep"></div>
+      <span class="l">ν = d / d_g (best)</span><span class="v va" id="snu">—</span>
+      <span class="l">improvement</span><span class="v" id="simp">—</span>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sh">SA Controls</div>
+    <div class="br">
+      <button class="b-run" id="brun">▶ Run SA</button>
+      <button class="b-neu" id="bpause" disabled>⏸</button>
+      <button class="b-neu" id="breset">⟳ Reset</button>
+    </div>
+    <div class="sl">
+      <span>slow</span>
+      <input type="range" id="speed" min="1" max="8" value="2">
+      <span>fast</span>
+    </div>
+  </div>
+
+  <!-- GSN Test section -->
+  <div class="sec">
+    <div class="sh">Test GSN — Before / After</div>
+    <div style="font-size:8px;color:#1a3050;margin-bottom:6px;line-height:1.6">
+      Pick S and T on either canvas, then run GSN simultaneously on both layouts to compare navigability.
+    </div>
+    <div class="br" style="margin-top:0">
+      <button class="b-pick" id="bgsn-pick">⊕ Pick S/T</button>
+      <button class="b-gsn" id="bgsn-run" disabled>▶ Run GSN</button>
+      <button class="b-neu" id="bgsn-clr">⊘</button>
+    </div>
+    <div class="br">
+      <button class="b-neu" id="bgsn-play" disabled>▶ Play</button>
+      <button class="b-neu" id="bgsn-step" disabled>▸ Step</button>
+      <button class="b-neu" id="bgsn-restart" disabled>⟳</button>
+    </div>
+    <div class="sl">
+      <span>slow</span>
+      <input type="range" id="gsn-speed" min="1" max="12" value="4">
+      <span>fast</span>
+    </div>
+    <div class="sg" style="margin-top:8px">
+      <span class="l"><span class="gsn-tag" style="background:#1a1000;color:#fbbf24;border:1px solid #5a3500">top</span> steps</span>
+      <span class="v" id="gs-top" style="color:#fbbf24">—</span>
+      <span class="l"><span class="gsn-tag" style="background:#100a18;color:#a78bfa;border:1px solid #3b1f6a">bot</span> steps</span>
+      <span class="v" id="gs-bot" style="color:#a78bfa">—</span>
+      <span class="l" style="padding-left:8px">backtracks — top</span><span class="v" id="gs-bkt">—</span>
+      <span class="l" style="padding-left:8px">backtracks — bot</span><span class="v" id="gs-bki">—</span>
+      <div class="sep"></div>
+      <span class="l va">step reduction</span><span class="v va" id="gs-imp">—</span>
+    </div>
+  </div>
+
+  <div id="chart-sec">
+    <div class="sh">d_g history</div>
+    <canvas id="chart"></canvas>
+    <div class="cleg">
+      <span><span style="color:#f9731650">█</span> heating</span>
+      <span><span style="color:#60a5fa35">█</span> quenching</span>
+      <span><span style="color:#34d399">—</span> best d_g</span>
+      <span><span style="color:#34d39940">··</span> d (BFS)</span>
+    </div>
+  </div>
+
+  <div id="status">Select a graph and press ▶ Run SA.</div>
+</div>
+</main>
+
+<script>
+// ── Canvases ──────────────────────────────────────────────────────
+const TC=document.getElementById('nc-top'), BC=document.getElementById('nc-bot');
+const Tctx=TC.getContext('2d'), Bctx=BC.getContext('2d');
+const CC=document.getElementById('chart'), Cctx=CC.getContext('2d');
+
+function resizeCvs(){
+  const wrap=document.getElementById('cv-wrap');
+  const W=wrap.clientWidth, H=wrap.clientHeight;
+  const topH=Math.floor((H-1)/2), botH=H-1-topH;
+  TC.width=W; TC.height=topH; BC.width=W; BC.height=botH;
+  document.getElementById('top-row').style.height=topH+'px';
+  document.getElementById('bot-row').style.height=botH+'px';
+}
+resizeCvs();
+
+// ── PRNG ──────────────────────────────────────────────────────────
+function mkRng(seed){
+  let s=(seed^0xdeadbeef)>>>0;
+  return ()=>{s^=s<<13;s^=s>>>17;s^=s<<5;return(s>>>0)/0x100000000;};
+}
+
+// ── Graph generators ──────────────────────────────────────────────
+function baModel(N,m,rng){
+  const adj=Array.from({length:N},()=>[]),deg=new Array(N).fill(0);
+  for(let i=0;i<Math.min(m+1,N);i++) for(let j=i+1;j<Math.min(m+1,N);j++){adj[i].push(j);adj[j].push(i);deg[i]++;deg[j]++;}
+  for(let i=Math.min(m+1,N);i<N;i++){
+    deg.push(0);adj.push([]);
+    const totD=deg.slice(0,i).reduce((a,b)=>a+b,0)||1;
+    const tgts=new Set();
+    for(let tries=0;tgts.size<m&&tries<N*20;tries++){let r=rng()*totD;for(let j=0;j<i;j++){r-=deg[j];if(r<=0){tgts.add(j);break;}}}
+    while(tgts.size<m)tgts.add(Math.floor(rng()*i));
+    for(const t of tgts){adj[i].push(t);adj[t].push(i);deg[i]++;deg[t]++;}
+  }
+  const edges=[];for(let i=0;i<N;i++)for(const j of adj[i])if(i<j)edges.push([i,j]);
+  return{N,adj,edges};
+}
+function wsModel(N,k,beta,rng){
+  const adj=Array.from({length:N},()=>[]),em=new Map();
+  const ek=(a,b)=>`${Math.min(a,b)}_${Math.max(a,b)}`;
+  for(let i=0;i<N;i++)for(let d=1;d<=k/2;d++){const j=(i+d)%N,key=ek(i,j);if(!em.has(key)){em.set(key,[i,j]);adj[i].push(j);adj[j].push(i);}}
+  for(const[key,[u,v]]of em){if(rng()<beta){let w,t=0;do{w=Math.floor(rng()*N);t++;}while((w===u||adj[u].includes(w))&&t<N*3);if(t<N*3&&w!==u&&!adj[u].includes(w)){adj[u]=adj[u].filter(x=>x!==v);adj[v]=adj[v].filter(x=>x!==u);em.delete(key);em.set(ek(u,w),[u,w]);adj[u].push(w);adj[w].push(u);}}}
+  return{N,adj,edges:[...em.values()].map(([a,b])=>[Math.min(a,b),Math.max(a,b)])};
+}
+function ringModel(N){const adj=Array.from({length:N},()=>[]),edges=[];for(let i=0;i<N;i++){const j=(i+1)%N;adj[i].push(j);adj[j].push(i);edges.push([i,j]);}return{N,adj,edges};}
+function gridModel(r,c){const N=r*c,adj=Array.from({length:N},()=>[]),edges=[];for(let i=0;i<r;i++)for(let j=0;j<c;j++){const idx=i*c+j;if(j+1<c){const k=idx+1;adj[idx].push(k);adj[k].push(idx);edges.push([idx,k]);}if(i+1<r){const k=idx+c;adj[idx].push(k);adj[k].push(idx);edges.push([idx,k]);}}return{N,adj,edges};}
+function karateModel(){
+  const N=34,adj=Array.from({length:N},()=>[]);
+  const edges=[[0,1],[0,2],[0,3],[0,4],[0,5],[0,6],[0,7],[0,8],[0,10],[0,11],[0,12],[0,13],[0,17],[0,19],[0,21],[0,31],[1,2],[1,3],[1,7],[1,13],[1,17],[1,19],[1,21],[1,30],[2,3],[2,7],[2,8],[2,9],[2,13],[2,27],[2,28],[2,32],[3,7],[3,12],[3,13],[4,6],[4,10],[5,6],[5,10],[5,16],[6,16],[8,30],[8,32],[8,33],[9,33],[13,33],[14,32],[14,33],[15,32],[15,33],[18,32],[18,33],[19,33],[20,32],[20,33],[22,32],[22,33],[23,25],[23,27],[23,29],[23,32],[23,33],[24,25],[24,27],[24,31],[25,31],[26,29],[26,33],[27,33],[28,31],[28,33],[29,32],[29,33],[30,32],[30,33],[31,32],[31,33],[32,33]];
+  for(const[a,b]of edges){adj[a].push(b);adj[b].push(a);}return{N,adj,edges};
+}
+
+// ── GSN & metrics ─────────────────────────────────────────────────
+function angTo(pi,pt,pj){
+  const tx=pt.x-pi.x,ty=pt.y-pi.y,jx=pj.x-pi.x,jy=pj.y-pi.y;
+  const dot=tx*jx+ty*jy,m=Math.hypot(tx,ty)*Math.hypot(jx,jy);
+  return m<1e-9?Math.PI:Math.acos(Math.max(-1,Math.min(1,dot/m)));
+}
+function gsnLen(pos,adj,s,t){
+  const visited=new Set([s]),stack=[s];let cur=s,steps=0;
+  const MAX=pos.length*pos.length;
+  while(cur!==t&&steps<MAX){
+    let best=null,bestA=Infinity;
+    for(const n of adj[cur])if(!visited.has(n)){const a=angTo(pos[cur],pos[t],pos[n]);if(a<bestA){bestA=a;best=n;}}
+    if(best!==null){visited.add(best);cur=best;stack.push(cur);}
+    else{stack.pop();if(!stack.length)return Infinity;cur=stack[stack.length-1];}
+    steps++;
+  }
+  return cur===t?steps:Infinity;
+}
+// Full GSN path (with step types) for a single S-T pair
+function gsnPath(pos,adj,s,t){
+  const visited=new Set([s]),stack=[s],path=[{node:s,type:'start'}];
+  let cur=s,steps=0;const MAX=pos.length*pos.length;
+  while(cur!==t&&steps<MAX){
+    let best=null,bestA=Infinity;
+    for(const n of adj[cur])if(!visited.has(n)){const a=angTo(pos[cur],pos[t],pos[n]);if(a<bestA){bestA=a;best=n;}}
+    if(best!==null){visited.add(best);cur=best;stack.push(cur);path.push({node:cur,type:cur===t?'arrive':'forward'});}
+    else{stack.pop();if(!stack.length)break;cur=stack[stack.length-1];path.push({node:cur,type:'backtrack'});}
+    steps++;
+  }
+  return path;
+}
+function compDg(pos,adj){
+  const N=pos.length;let tot=0,cnt=0;
+  for(let s=0;s<N;s++)for(let t=0;t<N;t++){if(s===t)continue;const d=gsnLen(pos,adj,s,t);if(d<Infinity){tot+=d;cnt++;}}
+  return cnt>0?tot/cnt:Infinity;
+}
+function compD(adj,N){
+  let tot=0,cnt=0;
+  for(let s=0;s<N;s++){const dist=new Array(N).fill(-1);dist[s]=0;const q=[s];while(q.length){const u=q.shift();for(const v of adj[u])if(dist[v]===-1){dist[v]=dist[u]+1;q.push(v);}}for(let t=0;t<N;t++)if(t!==s&&dist[t]!==-1){tot+=dist[t];cnt++;}}
+  return cnt>0?tot/cnt:Infinity;
+}
+
+// ── SA State ──────────────────────────────────────────────────────
+let G=null,pos=[],initPos=[],bestPos=[];
+let dg=Infinity,dgInit=Infinity,dgBest=Infinity,dShort=Infinity;
+let history=[];
+let saPhase='init',session=0,mcSt=0,phaseStep=0,consecRej=0;
+let running=false,raf=null;
+let rng=mkRng(42);
+const P={l:0.3,ph:0.2,pl:0,TH:60,TL:25,THL:6};
+
+// ── GSN Test State ────────────────────────────────────────────────
+let gsnSrc=null,gsnTgt=null,gsnPickMode=false;
+let gsnPathTop=null,gsnPathBot=null;
+let gsnAnimAt=0,gsnTimer=null,gsnPlaying=false;
+
+// ── Init graph ────────────────────────────────────────────────────
+function initG(){
+  running=false;if(raf)cancelAnimationFrame(raf);
+  clearInterval(gsnTimer);gsnTimer=null;gsnPlaying=false;
+  gsnSrc=null;gsnTgt=null;gsnPathTop=null;gsnPathBot=null;gsnAnimAt=0;gsnPickMode=false;
+  [TC,BC].forEach(c=>c.classList.remove('pick-mode'));
+  document.getElementById('bgsn-pick').textContent='⊕ Pick S/T';
+  document.getElementById('bgsn-run').disabled=true;
+  document.getElementById('bgsn-play').disabled=true;
+  document.getElementById('bgsn-step').disabled=true;
+  document.getElementById('bgsn-restart').disabled=true;
+  updateGSNStats();
+
+  const sel=document.getElementById('sel-graph').value;
+  rng=mkRng(Date.now());
+  if(sel==='ba')G=baModel(25,1,rng);
+  else if(sel==='ws')G=wsModel(25,4,0.1,rng);
+  else if(sel==='ring')G=ringModel(20);
+  else if(sel==='grid')G=gridModel(5,5);
+  else G=karateModel();
+
+  const N=G.N;
+  pos=Array.from({length:N},()=>({x:rng(),y:rng()}));
+  initPos=pos.map(p=>({...p}));bestPos=pos.map(p=>({...p}));
+  dShort=compD(G.adj,N);
+  dg=compDg(pos,G.adj);dgInit=dg;dgBest=dg;
+  history=[{dg,phase:'start',mc:0}];
+  saPhase='heating';session=0;mcSt=0;phaseStep=0;consecRej=0;
+
+  const E=G.edges.length;
+  document.getElementById('ginfo').textContent=`N=${N} · ${E} edges · ⟨k⟩=${(2*E/N).toFixed(1)}`;
+  updateSAUI();drawAll();
+  setStatus('Graph initialized. Press ▶ Run SA to optimize the layout.');
+}
+
+// ── SA trial ──────────────────────────────────────────────────────
+function trial(){
+  const N=G.N,i=Math.floor(rng()*N);
+  const ox=pos[i].x,oy=pos[i].y;
+  pos[i].x+=(rng()*2-1)*P.l;pos[i].y+=(rng()*2-1)*P.l;
+  const newDg=compDg(pos,G.adj);
+  const accept=newDg<dg||rng()<(saPhase==='heating'?P.ph:P.pl);
+  if(accept){dg=newDg;if(newDg<dgBest){dgBest=newDg;bestPos=pos.map(p=>({...p}));flashBest();}}
+  else{pos[i].x=ox;pos[i].y=oy;}
+  return accept;
+}
+function doMCStep(){
+  if(saPhase==='done')return;
+  let any=false;
+  for(let i=0;i<G.N;i++)if(trial())any=true;
+  mcSt++;phaseStep++;
+  history.push({dg:dgBest,phase:saPhase,mc:mcSt});
+  if(saPhase==='heating'){if(phaseStep>=P.TH){saPhase='quenching';phaseStep=0;consecRej=0;}}
+  else{if(!any)consecRej++;else consecRej=0;if(consecRej>=P.TL){session++;if(session>=P.THL){saPhase='done';pos=bestPos.map(p=>({...p}));}else{saPhase='heating';phaseStep=0;consecRej=0;}}}
+  updateSAUI();
+}
+function flashBest(){const el=document.getElementById('flash');el.style.opacity='1';setTimeout(()=>el.style.opacity='0',900);}
+
+// ── Drawing ───────────────────────────────────────────────────────
+function normalizePos(dp,W,H){
+  const xs=dp.map(p=>p.x),ys=dp.map(p=>p.y);
+  const mnX=Math.min(...xs),mxX=Math.max(...xs),mnY=Math.min(...ys),mxY=Math.max(...ys);
+  const pad=Math.min(42,W*.09,H*.11);
+  const sc=Math.min((W-2*pad)/((mxX-mnX)||1),(H-2*pad)/((mxY-mnY)||1));
+  const ox=(W-(mxX-mnX)*sc)/2,oy=(H-(mxY-mnY)*sc)/2;
+  return dp.map(p=>({x:ox+(p.x-mnX)*sc,y:oy+(p.y-mnY)*sc}));
+}
+
+function drawGraph(ctx,canvas,dp,dimmed){
+  const W=canvas.width,H=canvas.height;
+  ctx.clearRect(0,0,W,H);ctx.fillStyle='#060c18';ctx.fillRect(0,0,W,H);
+  if(!G||!dp.length)return;
+  const cp=normalizePos(dp,W,H),maxDeg=Math.max(...G.adj.map(a=>a.length),1);
+  ctx.strokeStyle=dimmed?'#091828':'#0d2245';ctx.lineWidth=dimmed?0.8:1.1;
+  ctx.beginPath();for(const[a,b]of G.edges){ctx.moveTo(cp[a].x,cp[a].y);ctx.lineTo(cp[b].x,cp[b].y);}ctx.stroke();
+  for(let i=0;i<G.N;i++){
+    const t=G.adj[i].length/maxDeg,r=dimmed?2+t*4:3+t*5.5;
+    const hue=dimmed?210:200-t*168,sat=dimmed?15+t*20:22+t*58,lit=dimmed?12+t*18:16+t*44;
+    ctx.beginPath();ctx.arc(cp[i].x,cp[i].y,r,0,Math.PI*2);
+    ctx.fillStyle=`hsl(${hue},${sat}%,${lit}%)`;ctx.fill();
+    ctx.strokeStyle=`hsl(${hue},${sat}%,${lit+10}%)`;ctx.lineWidth=0.5;ctx.stroke();
+  }
+}
+
+function drawGSNOverlay(ctx,canvas,dp,path,color){
+  if(!dp.length||gsnSrc===null)return;
+  const W=canvas.width,H=canvas.height,cp=normalizePos(dp,W,H);
+  const N=G.N,nr=4;
+  const upTo=path?Math.min(gsnAnimAt,path.length-1):0;
+
+  // Build edge states + visited set (accumulated over all steps so far)
+  const edgeSt=new Map(),visited=new Set();
+  if(path&&upTo>=0){
+    visited.add(path[0].node);
+    for(let i=1;i<=upTo;i++){
+      const a=path[i-1].node,b=path[i].node;
+      edgeSt.set(Math.min(a,b)+'_'+Math.max(a,b),path[i].type==='backtrack'?'bt':'fwd');
+      visited.add(b);
+    }
+  }
+
+  if(path&&upTo>0){
+    // Forward path edges (batch)
+    ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=1.8;ctx.globalAlpha=.85;ctx.setLineDash([]);
+    for(const[ea,eb]of G.edges){const k=Math.min(ea,eb)+'_'+Math.max(ea,eb);if(edgeSt.get(k)==='fwd'){ctx.moveTo(cp[ea].x,cp[ea].y);ctx.lineTo(cp[eb].x,cp[eb].y);}}
+    ctx.stroke();ctx.globalAlpha=1;
+
+    // Backtrack edges (dashed red, individual strokes)
+    ctx.lineWidth=1;ctx.strokeStyle='#ef444470';ctx.setLineDash([4,4]);
+    for(const[ea,eb]of G.edges){const k=Math.min(ea,eb)+'_'+Math.max(ea,eb);if(edgeSt.get(k)==='bt'){ctx.beginPath();ctx.moveTo(cp[ea].x,cp[ea].y);ctx.lineTo(cp[eb].x,cp[eb].y);ctx.stroke();}}
+    ctx.setLineDash([]);
+
+    const curNode=path[upTo].node;
+
+    // Tier 2: visited nodes — coloured fill (overrides base grey nodes)
+    ctx.fillStyle=color+'55';ctx.strokeStyle=color+'44';ctx.lineWidth=.5;ctx.beginPath();
+    for(const i of visited){
+      if(i===gsnSrc||i===gsnTgt||i===curNode)continue;
+      const v=cp[i];ctx.moveTo(v.x+nr,v.y);ctx.arc(v.x,v.y,nr,0,Math.PI*2);
+    }
+    ctx.fill();ctx.stroke();
+
+    // Angle viz + current node (if not arrived)
+    if(path[upTo].type!=='arrive'&&gsnTgt!==null){
+      drawGSNAngleViz(ctx,cp,dp,curNode,color);
+    }
+
+    // Tier 3: current navigator node — glow + bright fill
+    if(curNode!==gsnSrc&&curNode!==gsnTgt){
+      const v=cp[curNode];
+      ctx.beginPath();ctx.arc(v.x,v.y,nr+5,0,Math.PI*2);ctx.fillStyle=color+'18';ctx.fill();
+      ctx.beginPath();ctx.arc(v.x,v.y,nr+2,0,Math.PI*2);
+      ctx.fillStyle=color;ctx.strokeStyle=color;ctx.lineWidth=1;ctx.fill();ctx.stroke();
+    }
+  }
+
+  // S node — glow + red fill + label
+  {const v=cp[gsnSrc];
+  ctx.beginPath();ctx.arc(v.x,v.y,nr+5,0,Math.PI*2);ctx.fillStyle='#f8717118';ctx.fill();
+  ctx.beginPath();ctx.arc(v.x,v.y,nr+2,0,Math.PI*2);
+  ctx.fillStyle='#f87171';ctx.strokeStyle='#fca5a5';ctx.lineWidth=1.5;ctx.fill();ctx.stroke();
+  ctx.font=`700 8px 'JetBrains Mono',monospace`;ctx.fillStyle='#060c18';
+  ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('S',v.x,v.y);}
+
+  // T node — glow + green fill + label
+  if(gsnTgt!==null){
+    const v=cp[gsnTgt];
+    ctx.beginPath();ctx.arc(v.x,v.y,nr+5,0,Math.PI*2);ctx.fillStyle='#4ade8018';ctx.fill();
+    ctx.beginPath();ctx.arc(v.x,v.y,nr+2,0,Math.PI*2);
+    ctx.fillStyle='#4ade80';ctx.strokeStyle='#86efac';ctx.lineWidth=1.5;ctx.fill();ctx.stroke();
+    ctx.font=`700 8px 'JetBrains Mono',monospace`;ctx.fillStyle='#060c18';
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('T',v.x,v.y);
+  }
+}
+
+// Angle viz: dashed arrow toward target + spokes to ALL neighbours,
+// isMin checked globally (matching the original PRL demo exactly)
+function drawGSNAngleViz(ctx,cp,dp,nodeIdx,color){
+  const pos=cp[nodeIdx],tPos=cp[gsnTgt];
+  const tx=tPos.x-pos.x,ty=tPos.y-pos.y,tMag=Math.hypot(tx,ty);
+  if(tMag<3)return;
+  const tNx=tx/tMag,tNy=ty/tMag,len=Math.min(tMag*.4,28);
+
+  // Dashed arrow toward target
+  ctx.beginPath();ctx.moveTo(pos.x,pos.y);ctx.lineTo(pos.x+tNx*len,pos.y+tNy*len);
+  ctx.strokeStyle=color+'50';ctx.lineWidth=1.2;ctx.setLineDash([3,3]);ctx.stroke();ctx.setLineDash([]);
+  const ax=pos.x+tNx*len,ay=pos.y+tNy*len,h=5,aAng=Math.atan2(tNy,tNx);
+  ctx.beginPath();ctx.moveTo(ax,ay);
+  ctx.lineTo(ax-h*Math.cos(aAng-.5),ay-h*Math.sin(aAng-.5));
+  ctx.lineTo(ax-h*Math.cos(aAng+.5),ay-h*Math.sin(aAng+.5));
+  ctx.closePath();ctx.fillStyle=color+'60';ctx.fill();
+
+  // Spokes to ALL neighbours; isMin among all (same logic as original demo)
+  for(const n of G.adj[nodeIdx]){
+    const np=cp[n],jx=np.x-pos.x,jy=np.y-pos.y,jMag=Math.hypot(jx,jy);
+    if(jMag<2)continue;
+    const angle=angTo(dp[nodeIdx],dp[gsnTgt],dp[n]);
+    const isMin=G.adj[nodeIdx].every(nn=>nn===n||angTo(dp[nodeIdx],dp[gsnTgt],dp[nn])>=angle);
+    ctx.beginPath();ctx.moveTo(pos.x,pos.y);
+    ctx.lineTo(pos.x+jx/jMag*18,pos.y+jy/jMag*18);
+    ctx.strokeStyle=isMin?color+'aa':'#1a3a5060';
+    ctx.lineWidth=isMin?1.2:.6;ctx.stroke();
+  }
+}
+
+function drawAll(){
+  drawGraph(Tctx,TC,pos,false);
+  drawGraph(Bctx,BC,initPos,true);
+  if(gsnSrc!==null){
+    drawGSNOverlay(Tctx,TC,pos,gsnPathTop,'#fbbf24');
+    drawGSNOverlay(Bctx,BC,initPos,gsnPathBot,'#a78bfa');
+  }
+  document.getElementById('dg-top').textContent=dg<Infinity?`d_g = ${dg.toFixed(2)} (best: ${dgBest.toFixed(2)})`:'d_g = —';
+  document.getElementById('dg-bot').textContent=dgInit<Infinity?`d_g = ${dgInit.toFixed(2)} (initial)`:'d_g = —';
+  drawChart();
+}
+
+// ── Chart ─────────────────────────────────────────────────────────
+function drawChart(){
+  const W=CC.offsetWidth,H=CC.offsetHeight;if(!W||!H)return;
+  CC.width=W;CC.height=H;const ctx=Cctx;
+  ctx.fillStyle='#040a14';ctx.fillRect(0,0,W,H);
+  if(history.length<2)return;
+  const pad={t:4,b:4,l:2,r:2},iW=W-pad.l-pad.r,iH=H-pad.t-pad.b;
+  const vals=history.map(h=>h.dg).filter(v=>v<Infinity);if(!vals.length)return;
+  const yMin=Math.min(...vals,dShort<Infinity?dShort:Infinity)*0.97,yMax=Math.max(...vals)*1.03;
+  const scX=iW/Math.max(history.length-1,1),scY=iH/((yMax-yMin)||1);
+  const px=i=>pad.l+i*scX,py=v=>H-pad.b-(v-yMin)*scY;
+  let ps=0,pc=history[0]?.phase;
+  for(let i=1;i<=history.length;i++){const ph=i<history.length?history[i].phase:null;if(ph!==pc||i===history.length){ctx.fillStyle=pc==='heating'?'rgba(249,115,22,.06)':'rgba(96,165,250,.04)';ctx.fillRect(px(ps),pad.t,px(i)-px(ps),iH);ps=i;pc=ph;}}
+  if(dgInit<Infinity){ctx.strokeStyle='rgba(74,144,200,.2)';ctx.lineWidth=1;ctx.setLineDash([3,5]);ctx.beginPath();ctx.moveTo(pad.l,py(dgInit));ctx.lineTo(W-pad.r,py(dgInit));ctx.stroke();ctx.setLineDash([]);}
+  if(dShort<Infinity){ctx.strokeStyle='rgba(74,222,128,.3)';ctx.lineWidth=1;ctx.setLineDash([2,4]);ctx.beginPath();ctx.moveTo(pad.l,py(dShort));ctx.lineTo(W-pad.r,py(dShort));ctx.stroke();ctx.setLineDash([]);}
+  ctx.strokeStyle='#34d399';ctx.lineWidth=1.5;ctx.beginPath();let first=true;
+  for(let i=0;i<history.length;i++){if(history[i].dg>=Infinity)continue;if(first){ctx.moveTo(px(i),py(history[i].dg));first=false;}else ctx.lineTo(px(i),py(history[i].dg));}
+  ctx.stroke();
+  const last=history[history.length-1];
+  if(last&&last.dg<Infinity){ctx.beginPath();ctx.arc(px(history.length-1),py(last.dg),2.5,0,Math.PI*2);ctx.fillStyle='#34d399';ctx.fill();}
+}
+
+// ── UI helpers ────────────────────────────────────────────────────
+function updateSAUI(){
+  const cls={heating:'pb ph',quenching:'pb pq',done:'pb pd',init:'pb pi'};
+  const lbl={heating:'HEATING',quenching:'QUENCHING',done:'DONE',init:'READY'};
+  document.getElementById('pbadge').className=cls[saPhase]||'pb pi';
+  document.getElementById('pbadge').textContent=lbl[saPhase]||saPhase;
+  document.getElementById('ssess').textContent=session;
+  document.getElementById('smc').textContent=mcSt;
+  document.getElementById('sd').textContent=dShort<Infinity?dShort.toFixed(3):'—';
+  document.getElementById('sdinit').textContent=dgInit<Infinity?dgInit.toFixed(3):'—';
+  document.getElementById('sdg').textContent=dg<Infinity?dg.toFixed(3):'—';
+  document.getElementById('sdbest').textContent=dgBest<Infinity?dgBest.toFixed(3):'—';
+  const nu=dShort<Infinity&&dgBest>0?dShort/dgBest:null;
+  document.getElementById('snu').textContent=nu?nu.toFixed(3):'—';
+  if(dgInit<Infinity&&dgBest<Infinity)document.getElementById('simp').textContent=((dgInit-dgBest)/dgInit*100).toFixed(1)+'%';
+}
+function updateGSNStats(){
+  const tLen=gsnPathTop?(gsnPathTop.length-1):null;
+  const bLen=gsnPathBot?(gsnPathBot.length-1):null;
+  const tBt=gsnPathTop?gsnPathTop.filter(s=>s.type==='backtrack').length:null;
+  const bBt=gsnPathBot?gsnPathBot.filter(s=>s.type==='backtrack').length:null;
+  document.getElementById('gs-top').textContent=tLen!==null?tLen:'—';
+  document.getElementById('gs-bot').textContent=bLen!==null?bLen:'—';
+  document.getElementById('gs-bkt').textContent=tBt!==null?tBt:'—';
+  document.getElementById('gs-bki').textContent=bBt!==null?bBt:'—';
+  if(tLen!==null&&bLen!==null&&bLen>0){
+    const pct=((bLen-tLen)/bLen*100);
+    document.getElementById('gs-imp').textContent=(tLen<bLen?'↓':'↑')+Math.abs(pct).toFixed(1)+'%';
+  } else document.getElementById('gs-imp').textContent='—';
+}
+function setStatus(m){document.getElementById('status').textContent=m;}
+
+// ── SA Animation ──────────────────────────────────────────────────
+function loop(){
+  if(!running)return;
+  const k=+document.getElementById('speed').value;
+  for(let i=0;i<k;i++){if(saPhase==='done')break;doMCStep();}
+  drawAll();
+  if(saPhase==='done'){
+    running=false;
+    document.getElementById('brun').disabled=false;
+    document.getElementById('bpause').disabled=true;
+    document.getElementById('bpause').textContent='⏸';
+    const imp=((dgInit-dgBest)/dgInit*100).toFixed(1);
+    setStatus(`SA done — ${mcSt} MC steps. d_g: ${dgInit.toFixed(2)} → ${dgBest.toFixed(2)} (↓${imp}%), ν = ${(dShort/dgBest).toFixed(3)}. Now test GSN ↓`);
+    return;
+  }
+  raf=requestAnimationFrame(loop);
+}
+
+// ── GSN Animation ─────────────────────────────────────────────────
+function nodeAtClick(e,canvasEl,dp){
+  const rect=canvasEl.getBoundingClientRect();
+  const mx=(e.clientX-rect.left)*canvasEl.width/rect.width;
+  const my=(e.clientY-rect.top)*canvasEl.height/rect.height;
+  const cp=normalizePos(dp,canvasEl.width,canvasEl.height);
+  let best=null,bestD=16;
+  for(let i=0;i<cp.length;i++){const d=Math.hypot(cp[i].x-mx,cp[i].y-my);if(d<bestD){bestD=d;best=i;}}
+  return best;
+}
+
+function handleCanvasClick(e,canvasEl,dp){
+  if(!gsnPickMode||!G)return;
+  const n=nodeAtClick(e,canvasEl,dp);if(n===null)return;
+  if(gsnSrc===null){
+    gsnSrc=n;setStatus(`Source S = node ${n}. Now click any node to set target T.`);
+  } else if(n!==gsnSrc){
+    gsnTgt=n;gsnPickMode=false;
+    document.getElementById('bgsn-pick').textContent='⊕ Pick S/T';
+    [TC,BC].forEach(c=>c.classList.remove('pick-mode'));
+    document.getElementById('bgsn-run').disabled=false;
+    setStatus(`S=${gsnSrc}, T=${gsnTgt} selected. Press ▶ Run GSN to compare.`);
+  }
+  drawAll();
+}
+TC.addEventListener('click',e=>handleCanvasClick(e,TC,pos));
+BC.addEventListener('click',e=>handleCanvasClick(e,BC,initPos));
+
+function gsnAnimStep(){
+  const maxLen=Math.max(gsnPathTop?.length||0,gsnPathBot?.length||0);
+  if(gsnAnimAt<maxLen-1){
+    gsnAnimAt++;drawAll();updateGSNStats();
+  } else {
+    clearInterval(gsnTimer);gsnTimer=null;gsnPlaying=false;
+    document.getElementById('bgsn-play').textContent='▶ Play';
+    const tLen=(gsnPathTop?.length||1)-1,bLen=(gsnPathBot?.length||1)-1;
+    setStatus(`GSN done. Top (optimized): ${tLen} steps. Bottom (initial): ${bLen} steps.`);
+  }
+}
+function toggleGSNPlay(){
+  gsnPlaying=!gsnPlaying;
+  const btn=document.getElementById('bgsn-play');
+  if(gsnPlaying){
+    btn.textContent='⏸ Pause';
+    const maxLen=Math.max(gsnPathTop?.length||0,gsnPathBot?.length||0);
+    if(gsnAnimAt>=maxLen-1)gsnAnimAt=0;
+    const delay=Math.round(550-+document.getElementById('gsn-speed').value*42);
+    gsnTimer=setInterval(gsnAnimStep,delay);
+  } else {
+    btn.textContent='▶ Play';clearInterval(gsnTimer);gsnTimer=null;
+  }
+}
+
+// ── Buttons ───────────────────────────────────────────────────────
+document.getElementById('brun').onclick=()=>{
+  if(!G)return;
+  if(saPhase==='done'){initG();setTimeout(()=>document.getElementById('brun').click(),50);return;}
+  running=true;
+  document.getElementById('brun').disabled=true;
+  document.getElementById('bpause').disabled=false;
+  raf=requestAnimationFrame(loop);
+  setStatus('Optimizing layout via simulated annealing…');
+};
+document.getElementById('bpause').onclick=()=>{
+  running=!running;document.getElementById('bpause').textContent=running?'⏸':'▶';
+  if(running){raf=requestAnimationFrame(loop);setStatus('Running…');}else setStatus('Paused.');
+};
+document.getElementById('breset').onclick=()=>{
+  running=false;if(raf)cancelAnimationFrame(raf);
+  initG();document.getElementById('brun').disabled=false;document.getElementById('bpause').disabled=true;document.getElementById('bpause').textContent='⏸';
+};
+document.getElementById('sel-graph').onchange=()=>{
+  running=false;if(raf)cancelAnimationFrame(raf);
+  document.getElementById('brun').disabled=false;document.getElementById('bpause').disabled=true;initG();
+};
+
+// GSN test buttons
+document.getElementById('bgsn-pick').onclick=()=>{
+  gsnPickMode=!gsnPickMode;
+  const btn=document.getElementById('bgsn-pick');
+  if(gsnPickMode){
+    gsnSrc=null;gsnTgt=null;gsnPathTop=null;gsnPathBot=null;gsnAnimAt=0;
+    clearInterval(gsnTimer);gsnTimer=null;gsnPlaying=false;
+    document.getElementById('bgsn-run').disabled=true;
+    document.getElementById('bgsn-play').disabled=true;
+    document.getElementById('bgsn-step').disabled=true;
+    document.getElementById('bgsn-restart').disabled=true;
+    document.getElementById('bgsn-play').textContent='▶ Play';
+    btn.textContent='✕ Cancel';btn.className='b-neu';
+    [TC,BC].forEach(c=>c.classList.add('pick-mode'));
+    setStatus('Click a node on either canvas to set source S.');
+    updateGSNStats();
+  } else {
+    btn.textContent='⊕ Pick S/T';btn.className='b-pick';
+    [TC,BC].forEach(c=>c.classList.remove('pick-mode'));
+  }
+  drawAll();
+};
+document.getElementById('bgsn-run').onclick=()=>{
+  if(gsnSrc===null||gsnTgt===null||!G)return;
+  clearInterval(gsnTimer);gsnTimer=null;gsnPlaying=false;
+  document.getElementById('bgsn-play').textContent='▶ Play';
+  gsnPathTop=gsnPath(pos,G.adj,gsnSrc,gsnTgt);
+  gsnPathBot=gsnPath(initPos,G.adj,gsnSrc,gsnTgt);
+  gsnAnimAt=0;
+  document.getElementById('bgsn-play').disabled=false;
+  document.getElementById('bgsn-step').disabled=false;
+  document.getElementById('bgsn-restart').disabled=false;
+  updateGSNStats();drawAll();
+  const tLen=gsnPathTop.length-1,bLen=gsnPathBot.length-1;
+  setStatus(`GSN computed — optimized: ${tLen} steps, initial: ${bLen} steps.`);
+  toggleGSNPlay();
+};
+document.getElementById('bgsn-play').onclick=toggleGSNPlay;
+document.getElementById('bgsn-step').onclick=()=>{
+  clearInterval(gsnTimer);gsnTimer=null;gsnPlaying=false;
+  document.getElementById('bgsn-play').textContent='▶ Play';
+  gsnAnimStep();
+};
+document.getElementById('bgsn-restart').onclick=()=>{
+  clearInterval(gsnTimer);gsnTimer=null;gsnPlaying=false;
+  document.getElementById('bgsn-play').textContent='▶ Play';
+  gsnAnimAt=0;drawAll();
+};
+document.getElementById('bgsn-clr').onclick=()=>{
+  clearInterval(gsnTimer);gsnTimer=null;gsnPlaying=false;
+  gsnSrc=null;gsnTgt=null;gsnPathTop=null;gsnPathBot=null;gsnAnimAt=0;gsnPickMode=false;
+  document.getElementById('bgsn-pick').textContent='⊕ Pick S/T';
+  document.getElementById('bgsn-pick').className='b-pick';
+  document.getElementById('bgsn-run').disabled=true;
+  document.getElementById('bgsn-play').disabled=true;document.getElementById('bgsn-play').textContent='▶ Play';
+  document.getElementById('bgsn-step').disabled=true;
+  document.getElementById('bgsn-restart').disabled=true;
+  [TC,BC].forEach(c=>c.classList.remove('pick-mode'));
+  updateGSNStats();drawAll();setStatus('Cleared. Pick new S/T or keep running SA.');
+};
+
+window.addEventListener('resize',()=>{resizeCvs();drawAll();});
+
+// ── Init ─────────────────────────────────────────────────────────
+initG();
+</script>
+</body>
+</html>
