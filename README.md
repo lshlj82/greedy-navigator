@@ -1,13 +1,17 @@
 # Greedy Navigator
 
-An interactive demo of the **Greedy Spatial Navigation (GSN)** algorithm introduced in:
+Interactive demos of the **Greedy Spatial Navigation (GSN)** algorithm and its layout optimization, based on:
 
-> Lee, S. H. & Holme, P. (2012). Exploring Maps with Greedy Navigators. *Physical Review Letters*, 108, 128701.  
+> Lee, S. H. & Holme, P. (2012). Exploring Maps with Greedy Navigators. *Physical Review Letters*, 108, 128701.
 > https://link.aps.org/doi/10.1103/PhysRevLett.108.128701
 
-**Live demo:** https://lshlj82.github.io/greedy-navigator/
+> Lee, S. H. & Holme, P. (2012). Geometric properties of graph layouts optimized for greedy navigation. *Physical Review E*, 86, 067103.
+> https://link.aps.org/doi/10.1103/PhysRevE.86.067103
 
-*Demo created by Claude Sonnet 4.6.*
+**Live demo (navigation):** https://lshlj82.github.io/greedy-navigator/
+**Live demo (optimizer):** https://lshlj82.github.io/greedy-navigator/GSN_optimizer.html
+
+*Demos created by Claude Sonnet 4.6.*
 
 ---
 
@@ -31,26 +35,20 @@ where $d$ is the shortest path length (SPN) and $d_g$ is the total steps taken b
 
 ---
 
-## Features
+## Files
 
+### `index.html` — GSN Navigation Demo (PRL 2012)
+
+Explores navigability on real and synthetic road networks.
+
+**Features:**
 - **100 real city road networks** from the original paper's dataset — 20 cities each from the US, Europe, Asia, Latin America, and Africa (2 km × 2 km excerpts via OpenStreetMap)
 - **Random graph mode** — procedurally generated perturbed grid networks for quick experimentation
 - Step-by-step animation with adjustable speed
 - Live comparison of $d_g$, $d$, $d_r$, $\nu$, and backtrack count
-- Angle visualization showing how GSN selects its next move
+- Angle visualization showing how GSN selects its next move at each intersection
 
----
-
-## Dataset
-
-The road network data is the same dataset used in Fig. 4 of the paper. City excerpts were extracted using [Merkaartor](http://merkaartor.be/) from [OpenStreetMap](https://www.openstreetmap.org/) data. Original data by Lee & Holme, distributed under the OpenStreetMap license (ODbL).
-
----
-
-## Usage
-
-Open `index.html` in any modern browser — no server or build step required. All city data is embedded in the file.
-
+**Usage:**
 1. Select a continent and city (or switch to **Random Graph** mode)
 2. Click any intersection to set the **source (S)**
 3. Click another to set the **target (T)**
@@ -58,7 +56,34 @@ Open `index.html` in any modern browser — no server or build step required. Al
 
 ---
 
-## Reference
+### `GSN_optimizer.html` — Layout Optimization via Simulated Annealing (PRE 2012)
+
+Demonstrates the reverse problem: instead of navigating a given map, find the vertex layout that *minimizes* $d_g$ for a fixed graph topology.
+
+The optimizer uses **Simulated Annealing (SA)**: at each step, a randomly chosen vertex is perturbed. The new layout is accepted if $d_g$ improves, or with probability $p_\text{high}$ during heating (allowing escape from local minima). Quenching freezes the layout until convergence, and the process cycles for multiple sessions.
+
+**Features:**
+- Five graph models: Barabási-Albert, Watts-Strogatz, 1D Ring, 2D Grid, Zachary Karate Club
+- Split-screen view: top canvas shows the SA-optimized layout evolving in real time; bottom canvas keeps the initial random layout fixed for direct comparison
+- $d_g$ time series chart with heating/quenching phase bands
+- **Test GSN before/after**: pick any source–target pair and animate the GSN path simultaneously on both layouts, with angle spokes showing the navigator's decision at each step
+- Live stats: $d_g$ initial → best, $\nu$, improvement %, step-by-step backtrack count
+
+**Usage:**
+1. Select a graph model and press **▶ Run SA** to start optimization
+2. Watch the layout evolve as $d_g$ drops in the chart
+3. Once SA finishes (or at any point), click **⊕ Pick S/T** and select two nodes
+4. Press **▶ Run GSN** to animate the navigator on both layouts simultaneously
+
+---
+
+## Dataset
+
+The road network data used in `index.html` is the same dataset as Fig. 4 of the PRL paper. City excerpts were extracted using [Merkaartor](http://merkaartor.be/) from [OpenStreetMap](https://www.openstreetmap.org/) data. Original data by Lee & Holme, distributed under the OpenStreetMap license (ODbL).
+
+---
+
+## References
 
 ```bibtex
 @article{lee2012exploring,
@@ -69,5 +94,15 @@ Open `index.html` in any modern browser — no server or build step required. Al
   pages   = {128701},
   year    = {2012},
   doi     = {10.1103/PhysRevLett.108.128701}
+}
+
+@article{lee2012geometric,
+  title   = {Geometric properties of graph layouts optimized for greedy navigation},
+  author  = {Lee, Sang Hoon and Holme, Petter},
+  journal = {Physical Review E},
+  volume  = {86},
+  pages   = {067103},
+  year    = {2012},
+  doi     = {10.1103/PhysRevE.86.067103}
 }
 ```
