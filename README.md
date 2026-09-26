@@ -1,6 +1,6 @@
 # Greedy Navigator
 
-Interactive demos of the **Greedy Spatial Navigation (GSN)** algorithm, its layout optimization, and navigable city plan construction, based on three papers:
+Interactive demos of the **Greedy Spatial Navigation (GSN)** algorithm, its layout optimization, navigable city plan construction, and maze navigation, based on three papers:
 
 > Lee, S. H. & Holme, P. (2012). Exploring Maps with Greedy Navigators. *Physical Review Letters*, 108, 128701.
 > https://link.aps.org/doi/10.1103/PhysRevLett.108.128701
@@ -12,12 +12,25 @@ Interactive demos of the **Greedy Spatial Navigation (GSN)** algorithm, its layo
 > https://doi.org/10.1140/epjst/e2013-01720-8
 
 **Live demo (navigation):** https://lshlj82.github.io/greedy-navigator/
-
 **Live demo (optimizer):** https://lshlj82.github.io/greedy-navigator/GSN_optimizer.html
-
 **Live demo (city plans):** https://lshlj82.github.io/greedy-navigator/GSN_shortcut.html
+**Live demo (maze):** https://lshlj82.github.io/greedy-navigator/maze_navigator.html
 
 *Demos created by Claude Sonnet 4.6.*
+
+---
+
+## Authors
+
+**Sang Hoon Lee**
+- IceLab, Department of Physics, Umeå University, 901 87 Umeå, Sweden
+- Oxford Centre for Industrial and Applied Mathematics, Mathematical Institute, University of Oxford, Oxford OX1 3LB, UK *(PRE 2012, EPJST 2013)*
+- Department of Energy Science, Sungkyunkwan University, Suwon 440-746, Korea *(PRL 2012)*
+
+**Petter Holme**
+- IceLab, Department of Physics, Umeå University, 901 87 Umeå, Sweden
+- Department of Energy Science, Sungkyunkwan University, Suwon 440-746, Korea
+- Department of Sociology, Stockholm University, 106 91 Stockholm, Sweden
 
 ---
 
@@ -109,6 +122,34 @@ At each step, every candidate edge is evaluated and the one that most improves t
 1. Choose a strategy and length budget, then press **⊕ Generate New Graph**
 2. Press **▶ Run** to watch the network grow, or **▸ Step** to advance one shortcut at a time
 3. Compare GSNH vs GSNE to see hub vs. triangular-block emergence
+
+---
+
+### `maze_navigator.html` — Maze Navigation (PRL 2012)
+
+Generates perfect mazes (connected spanning trees of a grid) and animates all three routing strategies on them. Since a perfect maze is a tree — exactly one path between any two cells — the SPN solution is always unique, making the cost of incomplete information (captured by $\nu = d/d_g$) especially vivid.
+
+**Three maze generation algorithms:**
+
+| Algorithm | Character |
+|---|---|
+| **DFS (Backtracker)** | Long winding corridors, river-like passages, fewest dead ends |
+| **Prim's** | Many short dead ends branching off a central structure, bushy topology |
+| **Kruskal's** | Uniformly random spanning tree, balanced between the two |
+
+**Features:**
+- Adjustable maze size (width 8–30, height 6–22)
+- Click any cell to set source S; click S again to cancel and re-select
+- Click another cell to set target T
+- **⚄ Random S/T** button for instant random placement
+- Step-by-step or continuous animation for GSN, SPN, and Random DFS
+- Angle-spoke visualization showing the direction decision at each GSN step
+- Live $d_g$, $d$, $d_r$, $\nu$, and backtrack count
+
+**Usage:**
+1. Choose a generation algorithm and size, then press **⊕ Generate Maze**
+2. Click any cell for S, another for T (or use **⚄ Random S/T**)
+3. Press **GSN**, **SPN**, or **RND** to animate that strategy
 
 ---
 
