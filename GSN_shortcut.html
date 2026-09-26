@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Navigable City Plan Construction</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060c18;color:#b8cce0;font-family:'JetBrains Mono',monospace;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{padding:9px 18px;border-bottom:1px solid #0f2040;display:flex;align-items:baseline;gap:12px;flex-shrink:0}
+h1{font-size:12px;font-weight:600;letter-spacing:.06em;color:#ddeeff}
+.sub{font-size:9px;color:#1e3555}
+main{flex:1;display:flex;min-height:0}
+#cv-wrap{flex:1;position:relative;min-width:0}
+#net{display:block;width:100%;height:100%}
+/* Flash overlay */
+#flash{position:absolute;top:10px;left:10px;font-size:9px;color:#facc15;background:#12100080;padding:3px 9px;border:1px solid #facc1540;border-radius:2px;opacity:0;transition:opacity .3s;pointer-events:none}
+/* Legend */
+#legend{position:absolute;bottom:10px;left:10px;font-size:8px;color:#1e3555;line-height:2;pointer-events:none}
+.leg-row{display:flex;align-items:center;gap:6px}
+.leg-dot{width:18px;height:2px;border-radius:1px;flex-shrink:0}
+/* Panel */
+#panel{width:265px;flex-shrink:0;border-left:1px solid #0f2040;display:flex;flex-direction:column;overflow-y:auto;background:#040a14}
+.sec{padding:10px 13px;border-bottom:1px solid #091828;flex-shrink:0}
+.sh{font-size:7px;font-weight:600;letter-spacing:.2em;color:#142030;margin-bottom:7px;text-transform:uppercase}
+/* Slider row */
+.sl-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.sl-lbl{font-size:9px;color:#203850;flex:1}
+.sl-val{font-size:9px;color:#5090b8;width:28px;text-align:right;flex-shrink:0}
+input[type=range]{flex:1;accent-color:#2a5090;height:2px;cursor:pointer}
+/* Strategy buttons grid */
+.strat-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+/* Toggle */
+.tog-row{display:flex;align-items:center;justify-content:space-between;font-size:9px;color:#203850;margin-top:6px}
+.tog{position:relative;width:30px;height:16px;flex-shrink:0}
+.tog input{opacity:0;width:0;height:0}
+.tog-sl{position:absolute;inset:0;background:#0f2238;border-radius:8px;border:1px solid #1e3555;cursor:pointer;transition:.2s}
+.tog-sl::before{content:'';position:absolute;height:10px;width:10px;left:2px;top:2px;background:#2a4060;border-radius:50%;transition:.2s}
+.tog input:checked+.tog-sl{background:#0d2040;border-color:#1e5090}
+.tog input:checked+.tog-sl::before{transform:translateX(14px);background:#60a5fa}
+/* Buttons */
+button{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;padding:5px 7px;border-radius:2px;border:1px solid;cursor:pointer;transition:opacity .1s;display:flex;align-items:center;gap:5px;white-space:nowrap}
+button:disabled{opacity:.2;cursor:default}
+button:not(:disabled):hover{opacity:.72}
+.b-run{background:#071510;border-color:#185040;color:#34d399}
+.b-neu{background:#060e1c;border-color:#0f2035;color:#2a4560}
+.b-gen{background:#0d1020;border-color:#1e3060;color:#5080b0}
+.br{display:flex;gap:4px;margin-top:5px}
+.br button{flex:1;justify-content:center}
+/* Strategy button states */
+.bst{background:#060e1c;border:1px solid #0f2035;color:#2a4060;font-size:8px;padding:5px 4px;border-radius:2px;cursor:pointer;text-align:center;transition:all .1s;font-family:'JetBrains Mono',monospace;font-weight:600;letter-spacing:.04em}
+.bst:hover{opacity:.8}
+.bst.gsn-active{background:#12090a;border-color:#7a3a00;color:#fbbf24}
+.bst.spn-active{background:#010f08;border-color:#065040;color:#34d399}
+/* Stats */
+.sg{display:grid;grid-template-columns:1fr auto;row-gap:3px;font-size:9px}
+.sg .l{color:#1a3050}.sg .v{text-align:right;color:#406880;font-weight:500}
+.sg .va{color:#34d399}.sg .sep{grid-column:1/-1;height:1px;background:#091828;margin:2px 0}
+/* Progress bar */
+.pbar-wrap{margin-top:5px;background:#070f1c;border-radius:2px;height:4px;overflow:hidden;border:1px solid #0f1e35}
+.pbar{height:100%;background:linear-gradient(90deg,#1e5090,#60a5fa);border-radius:2px;transition:width .3s;width:0%}
+/* Charts */
+.chart-wrap{padding:10px 13px 8px;border-bottom:1px solid #091828;flex-shrink:0}
+canvas.chart{width:100%;height:70px;display:block}
+.cleg{font-size:7px;color:#1a3050;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap}
+#status{padding:5px 13px;border-top:1px solid #091828;font-size:8px;color:#1a3555;flex-shrink:0;min-height:22px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Navigable City Plan Construction</h1>
+  <span class="sub">Lee, S. H. &amp; Holme, P. · EPJST 215, 135 (2013) · <a href="https://doi.org/10.1140/epjst/e2013-01720-8" style="color:#1e3555;text-decoration:none" target="_blank">doi:10.1140/epjst/e2013-01720-8</a></span>
+  <span class="sub" style="margin-left:auto;color:#162840">Demo by Claude Sonnet 4.6</span>
+</header>
+<main>
+<div id="cv-wrap">
+  <canvas id="net"></canvas>
+  <div id="flash"></div>
+  <div id="legend">
+    <div class="leg-row"><div class="leg-dot" style="background:#f97316"></div>MST (skeleton)</div>
+    <div class="leg-row"><div class="leg-dot" style="background:#60a5fa"></div>Shortcuts added</div>
+    <div class="leg-row"><div class="leg-dot" style="background:#facc15;height:1px;border-top:1px dashed #facc15"></div>Next shortcut</div>
+  </div>
+</div>
+
+<div id="panel">
+  <div class="sec">
+    <div class="sh">Authors</div>
+    <div style="font-size:8px;color:#1a3050;line-height:1.8">
+      <div style="color:#5090b8;margin-bottom:3px">Sang Hoon Lee</div>
+      <div>IceLab, Dept of Physics, Umeå University</div>
+      <div>Oxford Centre for Industrial and Applied Mathematics, University of Oxford</div>
+      <div style="color:#5090b8;margin-top:5px;margin-bottom:3px">Petter Holme</div>
+      <div>IceLab, Dept of Physics, Umeå University</div>
+      <div>Dept of Energy Science, Sungkyunkwan University</div>
+      <div>Dept of Sociology, Stockholm University</div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sh">Graph Setup</div>
+    <div class="sl-row">
+      <span class="sl-lbl">Vertices N</span>
+      <input type="range" id="sl-n" min="12" max="35" value="25" style="flex:1">
+      <span class="sl-val" id="v-n">25</span>
+    </div>
+    <button class="b-gen" id="btn-gen" style="width:100%;justify-content:center;margin-top:2px">⊕ Generate New Graph</button>
+  </div>
+
+  <div class="sec">
+    <div class="sh">Navigation Strategy</div>
+    <div class="strat-grid" id="strat-grid">
+      <button class="bst gsn-active" data-s="GSNH">GSNH<br><span style="font-size:7px;font-weight:400;opacity:.7">GSN · hops</span></button>
+      <button class="bst" data-s="GSNE">GSNE<br><span style="font-size:7px;font-weight:400;opacity:.7">GSN · dist</span></button>
+      <button class="bst" data-s="SPNH">SPNH<br><span style="font-size:7px;font-weight:400;opacity:.7">SPN · hops</span></button>
+      <button class="bst" data-s="SPNE">SPNE<br><span style="font-size:7px;font-weight:400;opacity:.7">SPN · dist</span></button>
+    </div>
+    <div class="tog-row" style="margin-top:8px">
+      <span>No edge-crossing rule</span>
+      <label class="tog"><input type="checkbox" id="chk-cross" checked><span class="tog-sl"></span></label>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sh">Length Budget</div>
+    <div class="sl-row">
+      <span class="sl-lbl">Max length</span>
+      <input type="range" id="sl-lmax" min="15" max="60" value="30" step="5" style="flex:1">
+      <span class="sl-val" id="v-lmax">3.0×</span>
+    </div>
+    <div style="font-size:8px;color:#1a3050" id="lmax-info">Budget: — units total</div>
+  </div>
+
+  <div class="sec">
+    <div class="sh">Controls</div>
+    <div class="br">
+      <button class="b-run" id="btn-run" disabled>▶ Run</button>
+      <button class="b-neu" id="btn-pause" disabled>⏸</button>
+      <button class="b-neu" id="btn-step" disabled>▸ Step</button>
+      <button class="b-neu" id="btn-reset" disabled>⟳</button>
+    </div>
+    <div class="sl-row" style="margin-top:6px">
+      <span class="sl-lbl" style="flex:0 0 auto">Speed</span>
+      <input type="range" id="sl-speed" min="0" max="5" value="2" style="flex:1">
+      <span class="sl-val" id="v-speed">med</span>
+    </div>
+    <div class="pbar-wrap"><div class="pbar" id="pbar"></div></div>
+  </div>
+
+  <div class="sec">
+    <div class="sh">Progress</div>
+    <div class="sg">
+      <span class="l">Phase</span><span class="v" id="s-phase">—</span>
+      <span class="l">Shortcuts added</span><span class="v va" id="s-sc">0</span>
+      <div class="sep"></div>
+      <span class="l">Total edge length</span><span class="v" id="s-len">—</span>
+      <span class="l">Budget</span><span class="v" id="s-bud">—</span>
+      <div class="sep"></div>
+      <span class="l" style="color:#f97316">Metric (MST)</span><span class="v" id="s-mst">—</span>
+      <span class="l">Metric (current)</span><span class="v" id="s-cur">—</span>
+      <span class="l va">Improvement</span><span class="v va" id="s-imp">—</span>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="sh">Metric over shortcuts</div>
+    <canvas class="chart" id="chart-metric"></canvas>
+    <div class="cleg">
+      <span><span style="color:#34d399">—</span> metric</span>
+      <span><span style="color:#f9731640">——</span> MST baseline</span>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="sh">Degree distribution</div>
+    <canvas class="chart" id="chart-deg"></canvas>
+  </div>
+
+  <div id="status">Generate a graph, then press ▶ Run.</div>
+</div>
+</main>
+
+<script>
+// ── Canvas ─────────────────────────────────────────────────────────
+const NC=document.getElementById('net'),Nctx=NC.getContext('2d');
+function resizeNC(){const w=document.getElementById('cv-wrap');NC.width=w.clientWidth;NC.height=w.clientHeight;}
+resizeNC();
+
+// ── PRNG ──────────────────────────────────────────────────────────
+function mkRng(seed){let s=(seed^0xdeadbeef)>>>0;return()=>{s^=s<<13;s^=s>>>17;s^=s<<5;return(s>>>0)/0x100000000;};}
+
+// ── State ─────────────────────────────────────────────────────────
+let verts=[],edgeList=[],adjSet=new Map(),edgeKeySet=new Set();
+let totalLen=0,mstLen=0,metricMST=Infinity;
+let N=25,strategy='GSNH',noCross=true,lmaxMulti=3.0;
+let shortcutCount=0,computing=false,running=false,done=false;
+let metricHistory=[],highlightEdge=null,rafId=null;
+
+// ── Geometry helpers ───────────────────────────────────────────────
+const edgeKey=(a,b)=>`${Math.min(a,b)}_${Math.max(a,b)}`;
+const edgeDist=(a,b)=>Math.hypot(verts[a].x-verts[b].x,verts[a].y-verts[b].y);
+
+function toCanvas(p){
+  const pad=Math.min(45,NC.width*.09,NC.height*.09);
+  const sz=Math.min(NC.width,NC.height)-2*pad;
+  return{x:pad+p.x*sz,y:pad+p.y*sz};
+}
+
+// ── Edge management ───────────────────────────────────────────────
+function addEdge(a,b,len,isMST){
+  edgeKeySet.add(edgeKey(a,b));
+  adjSet.get(a).add(b);adjSet.get(b).add(a);
+  edgeList.push({a,b,len,isMST,order:isMST?0:shortcutCount+1});
+  totalLen+=len;
+}
+function addTmp(a,b){adjSet.get(a).add(b);adjSet.get(b).add(a);}
+function delTmp(a,b){adjSet.get(a).delete(b);adjSet.get(b).delete(a);}
+
+// ── MST (Kruskal) ─────────────────────────────────────────────────
+function buildMST(){
+  const all=[];
+  for(let i=0;i<N;i++)for(let j=i+1;j<N;j++)all.push({a:i,b:j,len:edgeDist(i,j)});
+  all.sort((a,b)=>a.len-b.len);
+  const par=Array.from({length:N},(_,i)=>i);
+  const find=x=>par[x]===x?x:(par[x]=find(par[x]));
+  const unite=(a,b)=>{par[find(a)]=find(b);};
+  for(const{a,b,len}of all)if(find(a)!==find(b)){unite(a,b);addEdge(a,b,len,true);}
+  mstLen=totalLen;
+}
+
+// ── Crossing check ────────────────────────────────────────────────
+function cross2D(ax,ay,bx,by){return ax*by-ay*bx;}
+function segCross(x1,y1,x2,y2,x3,y3,x4,y4){
+  const d1=cross2D(x4-x3,y4-y3,x1-x3,y1-y3);
+  const d2=cross2D(x4-x3,y4-y3,x2-x3,y2-y3);
+  const d3=cross2D(x2-x1,y2-y1,x3-x1,y3-y1);
+  const d4=cross2D(x2-x1,y2-y1,x4-x1,y4-y1);
+  return((d1>0&&d2<0)||(d1<0&&d2>0))&&((d3>0&&d4<0)||(d3<0&&d4>0));
+}
+function crossesExisting(u,v){
+  const ux=verts[u].x,uy=verts[u].y,vx=verts[v].x,vy=verts[v].y;
+  for(const{a,b}of edgeList){
+    if(a===u||a===v||b===u||b===v)continue;
+    if(segCross(ux,uy,vx,vy,verts[a].x,verts[a].y,verts[b].x,verts[b].y))return true;
+  }
+  return false;
+}
+
+// ── Navigation metrics ────────────────────────────────────────────
+function angTo(pi,pt,pj){
+  const tx=pt.x-pi.x,ty=pt.y-pi.y,jx=pj.x-pi.x,jy=pj.y-pi.y;
+  const dot=tx*jx+ty*jy,m=Math.hypot(tx,ty)*Math.hypot(jx,jy);
+  return m<1e-9?Math.PI:Math.acos(Math.max(-1,Math.min(1,dot/m)));
+}
+function gsnHop(s,t){
+  const vis=new Set([s]),stk=[s];let cur=s,steps=0;const MAX=N*N;
+  while(cur!==t&&steps<MAX){
+    let best=null,ba=Infinity;
+    for(const n of adjSet.get(cur))if(!vis.has(n)){const a=angTo(verts[cur],verts[t],verts[n]);if(a<ba){ba=a;best=n;}}
+    if(best!==null){vis.add(best);cur=best;stk.push(cur);}
+    else{stk.pop();if(!stk.length)return Infinity;cur=stk[stk.length-1];}
+    steps++;
+  }return cur===t?steps:Infinity;
+}
+function gsnEuc(s,t){
+  const vis=new Set([s]),stk=[s];let cur=s,dist=0,steps=0;const MAX=N*N;
+  while(cur!==t&&steps<MAX){
+    let best=null,ba=Infinity;
+    for(const n of adjSet.get(cur))if(!vis.has(n)){const a=angTo(verts[cur],verts[t],verts[n]);if(a<ba){ba=a;best=n;}}
+    if(best!==null){dist+=edgeDist(cur,best);vis.add(best);cur=best;stk.push(cur);}
+    else{stk.pop();if(!stk.length)return Infinity;const p=stk[stk.length-1];dist+=edgeDist(cur,p);cur=p;}
+    steps++;
+  }return cur===t?dist:Infinity;
+}
+function spnHop(s,t){
+  const d=new Array(N).fill(-1);d[s]=0;const q=[s];
+  while(q.length){const u=q.shift();if(u===t)break;for(const v of adjSet.get(u))if(d[v]===-1){d[v]=d[u]+1;q.push(v);}}
+  return d[t]>=0?d[t]:Infinity;
+}
+function spnEuc(s,t){
+  const d=new Array(N).fill(Infinity);d[s]=0;const vis=new Set(),pq=[[0,s]];
+  while(pq.length){pq.sort((a,b)=>a[0]-b[0]);const[dd,u]=pq.shift();if(vis.has(u))continue;vis.add(u);if(u===t)return dd;
+    for(const v of adjSet.get(u)){const nd=dd+edgeDist(u,v);if(nd<d[v]){d[v]=nd;pq.push([nd,v]);}}}
+  return d[t];
+}
+function computeMetric(){
+  const fn=strategy==='GSNH'?gsnHop:strategy==='GSNE'?gsnEuc:strategy==='SPNH'?spnHop:spnEuc;
+  let tot=0,cnt=0;
+  for(let s=0;s<N;s++)for(let t=0;t<N;t++){if(s===t)continue;const d=fn(s,t);if(d<Infinity){tot+=d;cnt++;}}
+  return cnt>0?tot/cnt:Infinity;
+}
+
+// ── Generate graph ────────────────────────────────────────────────
+function generate(){
+  if(computing)return;
+  running=false;done=false;shortcutCount=0;
+  highlightEdge=null;metricHistory=[];
+  verts=[];edgeList=[];adjSet=new Map();edgeKeySet=new Set();totalLen=0;mstLen=0;
+
+  const rng=mkRng(Date.now());
+  for(let i=0;i<N;i++){adjSet.set(i,new Set());verts.push({x:rng()*.85+.075,y:rng()*.85+.075});}
+  buildMST();
+  metricMST=computeMetric();
+  metricHistory.push(metricMST);
+
+  updateLmaxDisplay();
+  updateStats(metricMST);
+  drawAll();drawCharts();
+  document.getElementById('btn-run').disabled=false;
+  document.getElementById('btn-step').disabled=false;
+  document.getElementById('btn-reset').disabled=false;
+  document.getElementById('btn-pause').disabled=true;
+  setStatus(`Graph ready: N=${N}, MST built (${edgeList.length} edges). Metric=${metricMST.toFixed(3)}`);
+}
+
+// ── Find best shortcut (async) ────────────────────────────────────
+async function findBestShortcut(baseline){
+  const lmax=mstLen*lmaxMulti;
+  let bestEdge=null,bestImp=-Infinity,candidates=0,skipped=0;
+  document.getElementById('pbar').style.width='0%';
+
+  const total=(N*(N-1))/2-edgeList.length;
+  let checked=0;
+
+  for(let u=0;u<N;u++){
+    for(let v=u+1;v<N;v++){
+      if(edgeKeySet.has(edgeKey(u,v)))continue;
+      const len=edgeDist(u,v);
+      if(totalLen+len>lmax){skipped++;continue;}
+      if(noCross&&crossesExisting(u,v)){skipped++;continue;}
+      candidates++;
+      addTmp(u,v);const m=computeMetric();delTmp(u,v);
+      const imp=baseline-m;
+      if(imp>bestImp){bestImp=imp;bestEdge={a:u,b:v,len,metric:m};}
+      checked++;
+      if(checked%15===0){
+        document.getElementById('pbar').style.width=Math.min(99,(checked/Math.max(total-skipped,1))*100)+'%';
+        await new Promise(r=>setTimeout(r,0));
+        if(!computing)return null; // cancelled
+      }
+    }
+  }
+  document.getElementById('pbar').style.width='100%';
+  return bestEdge;
+}
+
+// ── Step ──────────────────────────────────────────────────────────
+async function doStep(){
+  if(computing||done)return;
+  computing=true;
+  const lmax=mstLen*lmaxMulti;
+  if(totalLen>=lmax){computing=false;done=true;finishUp();return;}
+
+  setStatus('Evaluating candidate shortcuts…');
+  const baseline=computeMetric();
+  const best=await findBestShortcut(baseline);
+
+  if(!computing){computing=false;return;} // cancelled by reset
+
+  if(!best){
+    computing=false;done=true;
+    setStatus(`No more valid shortcuts. Done: ${shortcutCount} shortcuts added.`);
+    stopRunning();return;
+  }
+
+  // Flash the chosen edge
+  highlightEdge=best;drawAll();
+  await new Promise(r=>setTimeout(r,280));
+  if(!computing){computing=false;return;}
+
+  // Commit
+  shortcutCount++;
+  addEdge(best.a,best.b,best.len,false);
+  highlightEdge=null;
+  metricHistory.push(best.metric);
+  document.getElementById('pbar').style.width='0%';
+
+  computing=false;
+  updateStats(best.metric);
+  drawAll();drawCharts();
+
+  const lUsed=((totalLen/lmax)*100).toFixed(0);
+  setStatus(`Shortcut ${shortcutCount}: metric ${baseline.toFixed(3)} → ${best.metric.toFixed(3)} (budget ${lUsed}% used)`);
+
+  if(totalLen>=lmax){done=true;finishUp();return;}
+  if(running)scheduleNext();
+}
+
+function finishUp(){
+  stopRunning();
+  const imp=((metricMST-metricHistory[metricHistory.length-1])/metricMST*100).toFixed(1);
+  setStatus(`Done — ${shortcutCount} shortcuts, metric improved by ${imp}% from MST.`);
+}
+
+function scheduleNext(){
+  const delays=[600,300,150,60,20,0];
+  const d=delays[Math.min(+document.getElementById('sl-speed').value,5)];
+  if(d===0)setTimeout(doStep,0);
+  else setTimeout(doStep,d);
+}
+
+function stopRunning(){
+  running=false;
+  document.getElementById('btn-run').disabled=done||!verts.length;
+  document.getElementById('btn-pause').disabled=true;
+  document.getElementById('btn-pause').textContent='⏸';
+  document.getElementById('btn-step').disabled=done||!verts.length;
+}
+
+// ── Draw network ──────────────────────────────────────────────────
+function drawAll(){
+  const W=NC.width,H=NC.height;
+  Nctx.clearRect(0,0,W,H);Nctx.fillStyle='#060c18';Nctx.fillRect(0,0,W,H);
+  if(!verts.length)return;
+
+  // Subtle grid
+  Nctx.strokeStyle='#0a1628';Nctx.lineWidth=.5;
+  const gs=Math.min(W,H)/10;
+  for(let x=0;x<W;x+=gs){Nctx.beginPath();Nctx.moveTo(x,0);Nctx.lineTo(x,H);Nctx.stroke();}
+  for(let y=0;y<H;y+=gs){Nctx.beginPath();Nctx.moveTo(0,y);Nctx.lineTo(W,y);Nctx.stroke();}
+
+  const maxDeg=Math.max(...[...adjSet.values()].map(s=>s.size),1);
+  const maxOrder=Math.max(shortcutCount,1);
+
+  // MST edges
+  Nctx.strokeStyle='#f97316';Nctx.lineWidth=1.2;Nctx.beginPath();
+  for(const{a,b,isMST}of edgeList){if(!isMST)continue;
+    const pa=toCanvas(verts[a]),pb=toCanvas(verts[b]);
+    Nctx.moveTo(pa.x,pa.y);Nctx.lineTo(pb.x,pb.y);}
+  Nctx.stroke();
+
+  // Shortcut edges (color by addition order: early=blue, late=violet)
+  for(const{a,b,isMST,order}of edgeList){if(isMST)continue;
+    const t=order/maxOrder; // 0=first, 1=last
+    const r=Math.round(60+t*100),g=Math.round(165-t*60),b2=Math.round(250-t*90);
+    const pa=toCanvas(verts[a]),pb=toCanvas(verts[b]);
+    Nctx.beginPath();Nctx.moveTo(pa.x,pa.y);Nctx.lineTo(pb.x,pb.y);
+    Nctx.strokeStyle=`rgb(${r},${g},${b2})`;Nctx.lineWidth=1.4;Nctx.stroke();}
+
+  // Highlight edge (next shortcut to add)
+  if(highlightEdge){
+    const pa=toCanvas(verts[highlightEdge.a]),pb=toCanvas(verts[highlightEdge.b]);
+    Nctx.beginPath();Nctx.moveTo(pa.x,pa.y);Nctx.lineTo(pb.x,pb.y);
+    Nctx.strokeStyle='#facc15';Nctx.lineWidth=2;Nctx.setLineDash([6,4]);Nctx.stroke();Nctx.setLineDash([]);
+    showFlash(`+ shortcut ${shortcutCount+1}`);
+  }
+
+  // Nodes
+  for(let i=0;i<N;i++){
+    const deg=[...adjSet.get(i)].length;
+    const t=deg/maxDeg;
+    const r=3+t*5;
+    const hue=200-t*168,sat=22+t*58,lit=16+t*44;
+    const cp=toCanvas(verts[i]);
+    Nctx.beginPath();Nctx.arc(cp.x,cp.y,r,0,Math.PI*2);
+    Nctx.fillStyle=`hsl(${hue},${sat}%,${lit}%)`;Nctx.fill();
+    Nctx.strokeStyle=`hsl(${hue},${sat}%,${lit+10}%)`;Nctx.lineWidth=.5;Nctx.stroke();
+  }
+}
+
+// ── Charts ────────────────────────────────────────────────────────
+function drawCharts(){drawMetricChart();drawDegChart();}
+
+function drawMetricChart(){
+  const el=document.getElementById('chart-metric');
+  const W=el.offsetWidth,H=el.offsetHeight;if(!W||!H)return;
+  el.width=W;el.height=H;const ctx=el.getContext('2d');
+  ctx.fillStyle='#040a14';ctx.fillRect(0,0,W,H);
+  if(metricHistory.length<1)return;
+  const pad={t:4,b:4,l:2,r:2},iW=W-pad.l-pad.r,iH=H-pad.t-pad.b;
+  const yMin=Math.min(...metricHistory)*0.95,yMax=metricMST*1.05;
+  const scX=iW/Math.max(metricHistory.length-1,1),scY=iH/((yMax-yMin)||1);
+  const px=i=>pad.l+i*scX,py=v=>H-pad.b-(v-yMin)*scY;
+  // MST baseline
+  ctx.strokeStyle='rgba(249,115,22,.3)';ctx.lineWidth=1;ctx.setLineDash([3,4]);
+  ctx.beginPath();ctx.moveTo(pad.l,py(metricMST));ctx.lineTo(W-pad.r,py(metricMST));ctx.stroke();ctx.setLineDash([]);
+  // Metric line
+  ctx.strokeStyle='#34d399';ctx.lineWidth=1.5;ctx.beginPath();
+  for(let i=0;i<metricHistory.length;i++){
+    if(i===0)ctx.moveTo(px(i),py(metricHistory[i]));else ctx.lineTo(px(i),py(metricHistory[i]));
+  }ctx.stroke();
+  if(metricHistory.length>0){
+    ctx.beginPath();ctx.arc(px(metricHistory.length-1),py(metricHistory[metricHistory.length-1]),2.5,0,Math.PI*2);
+    ctx.fillStyle='#34d399';ctx.fill();
+  }
+}
+
+function drawDegChart(){
+  const el=document.getElementById('chart-deg');
+  const W=el.offsetWidth,H=el.offsetHeight;if(!W||!H)return;
+  el.width=W;el.height=H;const ctx=el.getContext('2d');
+  ctx.fillStyle='#040a14';ctx.fillRect(0,0,W,H);
+  if(!verts.length)return;
+  // Compute degree distribution
+  const deg=Array.from({length:N},(_,i)=>[...adjSet.get(i)].length);
+  const maxDeg=Math.max(...deg);
+  const counts=new Array(maxDeg+1).fill(0);
+  for(const d of deg)counts[d]++;
+  // Draw bars (skip degree 0)
+  const kMin=1,kMax=maxDeg;
+  const nBars=kMax-kMin+1;if(nBars<=0)return;
+  const pad=4,barW=(W-2*pad)/nBars*.85,gap=(W-2*pad)/nBars*.15;
+  const maxCount=Math.max(...counts.slice(kMin));
+  const scY=(H-pad*2)/maxCount;
+  for(let k=kMin;k<=kMax;k++){
+    const bh=counts[k]*scY;
+    const bx=pad+(k-kMin)*((W-2*pad)/nBars);
+    const by=H-pad-bh;
+    const t=(k-kMin)/(Math.max(kMax-kMin,1));
+    const r=Math.round(60+t*100),g=Math.round(165-t*60),b=Math.round(250-t*90);
+    ctx.fillStyle=`rgba(${r},${g},${b},.7)`;
+    ctx.fillRect(bx,by,barW,bh);
+  }
+  // Axis labels
+  ctx.font=`7px 'JetBrains Mono',monospace`;ctx.fillStyle='#1a3050';ctx.textAlign='center';
+  for(let k=kMin;k<=kMax;k+=Math.ceil(nBars/8)){
+    const bx=pad+(k-kMin)*((W-2*pad)/nBars)+barW/2;
+    ctx.fillText(k,bx,H-1);
+  }
+}
+
+// ── UI helpers ────────────────────────────────────────────────────
+function updateStats(curMetric){
+  const lmax=mstLen*lmaxMulti;
+  const isGSN=strategy.startsWith('GSN');
+  const isHop=strategy.endsWith('H');
+  const unit=isHop?'steps':'dist';
+  document.getElementById('s-phase').textContent=
+    !verts.length?'—':done?'DONE':shortcutCount===0?'MST built':'Adding shortcuts';
+  document.getElementById('s-sc').textContent=shortcutCount;
+  document.getElementById('s-len').textContent=verts.length?totalLen.toFixed(3):'—';
+  document.getElementById('s-bud').textContent=verts.length?lmax.toFixed(3):'—';
+  document.getElementById('s-mst').textContent=metricMST<Infinity?metricMST.toFixed(3)+' '+unit:'—';
+  document.getElementById('s-cur').textContent=curMetric!==undefined&&curMetric<Infinity?curMetric.toFixed(3)+' '+unit:'—';
+  if(curMetric!==undefined&&metricMST<Infinity&&curMetric<Infinity){
+    const imp=((metricMST-curMetric)/metricMST*100).toFixed(1);
+    document.getElementById('s-imp').textContent=imp+'%';
+  } else document.getElementById('s-imp').textContent='—';
+}
+function updateLmaxDisplay(){
+  document.getElementById('v-lmax').textContent=lmaxMulti.toFixed(1)+'×';
+  const lmax=mstLen>0?mstLen*lmaxMulti:0;
+  document.getElementById('lmax-info').textContent=
+    mstLen>0?`Budget: ${lmax.toFixed(3)} units (MST = ${mstLen.toFixed(3)})`: 'Budget: generate a graph first';
+}
+function showFlash(msg){
+  const el=document.getElementById('flash');
+  el.textContent=msg;el.style.opacity='1';
+  clearTimeout(el._t);el._t=setTimeout(()=>el.style.opacity='0',700);
+}
+function setStatus(m){document.getElementById('status').textContent=m;}
+
+// ── Buttons ───────────────────────────────────────────────────────
+document.getElementById('sl-n').oninput=e=>{N=+e.target.value;document.getElementById('v-n').textContent=N;};
+document.getElementById('sl-lmax').oninput=e=>{
+  lmaxMulti=+e.target.value/10;
+  document.getElementById('v-lmax').textContent=lmaxMulti.toFixed(1)+'×';
+  updateLmaxDisplay();
+};
+document.getElementById('sl-speed').oninput=e=>{
+  const lbls=['v.slow','slow','med','fast','v.fast','max'];
+  document.getElementById('v-speed').textContent=lbls[+e.target.value]||'med';
+};
+document.getElementById('chk-cross').onchange=e=>{noCross=e.target.checked;};
+document.getElementById('btn-gen').onclick=()=>{
+  if(computing){computing=false;}
+  running=false;
+  generate();
+};
+document.getElementById('btn-run').onclick=()=>{
+  if(!verts.length||done)return;
+  running=true;
+  document.getElementById('btn-run').disabled=true;
+  document.getElementById('btn-pause').disabled=false;
+  document.getElementById('btn-step').disabled=true;
+  scheduleNext();
+  setStatus('Running greedy shortcut construction…');
+};
+document.getElementById('btn-pause').onclick=()=>{
+  running=!running;
+  const btn=document.getElementById('btn-pause');
+  if(running){
+    btn.textContent='⏸';
+    document.getElementById('btn-step').disabled=true;
+    scheduleNext();
+    setStatus('Running…');
+  } else {
+    btn.textContent='▶';
+    document.getElementById('btn-run').disabled=true;
+    document.getElementById('btn-step').disabled=false;
+    setStatus('Paused. Use ▸ Step or ▶ in Pause to continue.');
+  }
+};
+document.getElementById('btn-step').onclick=()=>{if(!computing&&!done)doStep();};
+document.getElementById('btn-reset').onclick=()=>{
+  computing=false;running=false;done=false;
+  highlightEdge=null;
+  // Rebuild from scratch keeping same vertices
+  if(!verts.length)return;
+  edgeList=[];adjSet=new Map();edgeKeySet=new Set();totalLen=0;shortcutCount=0;
+  for(let i=0;i<N;i++)adjSet.set(i,new Set());
+  buildMST();
+  metricMST=computeMetric();
+  metricHistory=[metricMST];
+  document.getElementById('pbar').style.width='0%';
+  document.getElementById('btn-run').disabled=false;
+  document.getElementById('btn-pause').disabled=true;
+  document.getElementById('btn-pause').textContent='⏸';
+  document.getElementById('btn-step').disabled=false;
+  updateLmaxDisplay();updateStats(metricMST);drawAll();drawCharts();
+  setStatus('Reset to MST. Press ▶ Run to rebuild.');
+};
+
+// Strategy buttons
+document.querySelectorAll('.bst').forEach(btn=>{
+  btn.onclick=()=>{
+    strategy=btn.dataset.s;
+    document.querySelectorAll('.bst').forEach(b=>{b.classList.remove('gsn-active','spn-active');});
+    const cls=strategy.startsWith('GSN')?'gsn-active':'spn-active';
+    btn.classList.add(cls);
+    setStatus(`Strategy: ${strategy}. Regenerate or Reset to use.`);
+  };
+});
+
+window.addEventListener('resize',()=>{resizeNC();drawAll();});
+
+// ── Init ──────────────────────────────────────────────────────────
+generate();
+</script>
+</body>
+</html>

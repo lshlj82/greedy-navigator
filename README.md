@@ -1,6 +1,6 @@
 # Greedy Navigator
 
-Interactive demos of the **Greedy Spatial Navigation (GSN)** algorithm and its layout optimization, based on:
+Interactive demos of the **Greedy Spatial Navigation (GSN)** algorithm, its layout optimization, and navigable city plan construction, based on three papers:
 
 > Lee, S. H. & Holme, P. (2012). Exploring Maps with Greedy Navigators. *Physical Review Letters*, 108, 128701.
 > https://link.aps.org/doi/10.1103/PhysRevLett.108.128701
@@ -8,11 +8,28 @@ Interactive demos of the **Greedy Spatial Navigation (GSN)** algorithm and its l
 > Lee, S. H. & Holme, P. (2012). Geometric properties of graph layouts optimized for greedy navigation. *Physical Review E*, 86, 067103.
 > https://link.aps.org/doi/10.1103/PhysRevE.86.067103
 
-**Live demo (navigation):** https://lshlj82.github.io/greedy-navigator/
+> Lee, S. H. & Holme, P. (2013). A greedy-navigator approach to navigable city plans. *The European Physical Journal Special Topics*, 215, 135–144.
+> https://doi.org/10.1140/epjst/e2013-01720-8
 
+**Live demo (navigation):** https://lshlj82.github.io/greedy-navigator/
 **Live demo (optimizer):** https://lshlj82.github.io/greedy-navigator/GSN_optimizer.html
+**Live demo (city plans):** https://lshlj82.github.io/greedy-navigator/GSN_shortcut.html
 
 *Demos created by Claude Sonnet 4.6.*
+
+---
+
+## Authors
+
+**Sang Hoon Lee**
+- IceLab, Department of Physics, Umeå University, 901 87 Umeå, Sweden
+- Oxford Centre for Industrial and Applied Mathematics, Mathematical Institute, University of Oxford, Oxford OX1 3LB, UK *(PRE 2012, EPJST 2013)*
+- Department of Energy Science, Sungkyunkwan University, Suwon 440-746, Korea *(PRL 2012)*
+
+**Petter Holme**
+- IceLab, Department of Physics, Umeå University, 901 87 Umeå, Sweden
+- Department of Energy Science, Sungkyunkwan University, Suwon 440-746, Korea
+- Department of Sociology, Stockholm University, 106 91 Stockholm, Sweden
 
 ---
 
@@ -59,22 +76,51 @@ Explores navigability on real and synthetic road networks.
 
 ### `GSN_optimizer.html` — Layout Optimization via Simulated Annealing (PRE 2012)
 
-Demonstrates the reverse problem: instead of navigating a given map, find the vertex layout that *minimizes* $d_g$ for a fixed graph topology.
+Demonstrates the reverse problem: instead of navigating a given map, find the vertex layout that *minimizes* $d_g$ for a fixed graph topology, using Simulated Annealing (SA).
 
-The optimizer uses **Simulated Annealing (SA)**: at each step, a randomly chosen vertex is perturbed. The new layout is accepted if $d_g$ improves, or with probability $p_\text{high}$ during heating (allowing escape from local minima). Quenching freezes the layout until convergence, and the process cycles for multiple sessions.
+At each trial step, a randomly chosen vertex is perturbed. The new layout is accepted if $d_g$ improves, or with probability $p_\text{high}$ during heating (allowing escape from local minima). Quenching then freezes the layout until convergence, and the process cycles for multiple sessions, always recording the best layout found.
 
 **Features:**
 - Five graph models: Barabási-Albert, Watts-Strogatz, 1D Ring, 2D Grid, Zachary Karate Club
-- Split-screen view: top canvas shows the SA-optimized layout evolving in real time; bottom canvas keeps the initial random layout fixed for direct comparison
+- Split-screen view: SA-optimized layout (top) vs. initial random layout (bottom)
 - $d_g$ time series chart with heating/quenching phase bands
 - **Test GSN before/after**: pick any source–target pair and animate the GSN path simultaneously on both layouts, with angle spokes showing the navigator's decision at each step
-- Live stats: $d_g$ initial → best, $\nu$, improvement %, step-by-step backtrack count
+- Live stats: $d_g$ initial → best, $\nu$, improvement %
 
 **Usage:**
 1. Select a graph model and press **▶ Run SA** to start optimization
-2. Watch the layout evolve as $d_g$ drops in the chart
-3. Once SA finishes (or at any point), click **⊕ Pick S/T** and select two nodes
-4. Press **▶ Run GSN** to animate the navigator on both layouts simultaneously
+2. Once SA finishes, click **⊕ Pick S/T** and select two nodes
+3. Press **▶ Run GSN** to animate the navigator on both layouts simultaneously
+
+---
+
+### `GSN_shortcut.html` — Navigable City Plan Construction (EPJST 2013)
+
+Grows a road network from scratch by greedily adding shortcuts to a Minimum Spanning Tree (MST) skeleton, optimizing for one of four navigability metrics under a total edge-length budget.
+
+At each step, every candidate edge is evaluated and the one that most improves the chosen metric is added — subject to a length budget and, optionally, a no-crossing rule that prevents intersections from creating unintended junctions.
+
+**Four strategies:**
+
+| Strategy | Routing | Metric |
+|---|---|---|
+| **GSNH** | GSN | Hop count |
+| **GSNE** | GSN | Euclidean path length |
+| **SPNH** | Shortest path | Hop count |
+| **SPNE** | Shortest path | Euclidean path length |
+
+**Key findings reproduced:** hopping-distance strategies produce hub nodes (fat-tailed degree distributions); Euclidean-distance strategies produce triangular block structures. Disabling the no-crossing rule with SPNH leads to star-graph condensation — a collapse avoided naturally by GSNH.
+
+**Features:**
+- Animated shortcut construction step by step
+- Shortcut edges color-coded by addition order (blue → violet)
+- Live degree distribution and metric history charts
+- No-crossing rule toggle
+
+**Usage:**
+1. Choose a strategy and length budget, then press **⊕ Generate New Graph**
+2. Press **▶ Run** to watch the network grow, or **▸ Step** to advance one shortcut at a time
+3. Compare GSNH vs GSNE to see hub vs. triangular-block emergence
 
 ---
 
@@ -105,5 +151,15 @@ The road network data used in `index.html` is the same dataset as Fig. 4 of the 
   pages   = {067103},
   year    = {2012},
   doi     = {10.1103/PhysRevE.86.067103}
+}
+
+@article{lee2013greedy,
+  title   = {A greedy-navigator approach to navigable city plans},
+  author  = {Lee, Sang Hoon and Holme, Petter},
+  journal = {The European Physical Journal Special Topics},
+  volume  = {215},
+  pages   = {135--144},
+  year    = {2013},
+  doi     = {10.1140/epjst/e2013-01720-8}
 }
 ```
