@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maze Navigator — GSN vs SPN vs Random DFS</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060c18;color:#b8cce0;font-family:'JetBrains Mono',monospace;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{padding:9px 18px;border-bottom:1px solid #0f2040;display:flex;align-items:baseline;gap:12px;flex-shrink:0}
+h1{font-size:12px;font-weight:600;letter-spacing:.06em;color:#ddeeff}
+.sub{font-size:9px;color:#1e3555}
+main{flex:1;display:flex;min-height:0}
+#cv-wrap{flex:1;position:relative;min-width:0}
+#maze{display:block;width:100%;height:100%}
+#hint{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:9px;color:#1e3555;pointer-events:none;white-space:nowrap}
+#panel{width:268px;flex-shrink:0;border-left:1px solid #0f2040;display:flex;flex-direction:column;overflow-y:auto;background:#040a14}
+.sec{padding:11px 13px;border-bottom:1px solid #091828;flex-shrink:0}
+.sh{font-size:7px;font-weight:600;letter-spacing:.2em;color:#142030;margin-bottom:8px;text-transform:uppercase}
+/* Slider rows */
+.sr{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.sl{font-size:9px;color:#1a3050;flex:1}
+.sv{font-size:9px;color:#4a7090;width:26px;text-align:right;flex-shrink:0}
+input[type=range]{flex:1;accent-color:#2a5090;height:2px;cursor:pointer}
+/* Algo grid */
+.ag{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;margin-bottom:6px}
+.ag2{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:6px}
+/* Buttons */
+button{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;padding:5px 7px;border-radius:2px;border:1px solid;cursor:pointer;transition:opacity .1s;display:flex;align-items:center;gap:5px;white-space:nowrap}
+button:disabled{opacity:.2;cursor:default}
+button:not(:disabled):hover{opacity:.72}
+.b-run{background:#071510;border-color:#185040;color:#34d399}
+.b-neu{background:#060e1c;border-color:#0f2035;color:#2a4560}
+.br{display:flex;gap:4px}
+.br button{flex:1;justify-content:center}
+/* Maze gen buttons */
+.mg{background:#060e1c;border:1px solid #0f2035;color:#243a55;font-size:8px;padding:5px 4px;border-radius:2px;cursor:pointer;text-align:center;transition:all .1s;font-family:'JetBrains Mono',monospace;font-weight:500}
+.mg.active{background:#0a1e36;border-color:#1e4070;color:#6090c8}
+.mg:hover{opacity:.8}
+/* Navigation algo buttons */
+.na{background:#060e1c;border:1px solid #0f2035;color:#243a55;font-size:8px;padding:5px 4px;border-radius:2px;cursor:pointer;text-align:center;font-family:'JetBrains Mono',monospace;font-weight:600;letter-spacing:.04em;transition:all .1s}
+.na-gsn.active{background:#12090a;border-color:#7a3a00;color:#fbbf24}
+.na-spn.active{background:#010f08;border-color:#065040;color:#34d399}
+.na-rnd.active{background:#09051a;border-color:#30186a;color:#a78bfa}
+.na:hover{opacity:.8}
+/* Stats */
+.sg{display:grid;grid-template-columns:1fr auto;row-gap:3px;font-size:9px}
+.sg .l{color:#1a3050}.sg .v{text-align:right;color:#406880;font-weight:500}
+.sg .va{color:#34d399}.sg .sep{grid-column:1/-1;height:1px;background:#091828;margin:2px 0}
+/* Log */
+#log-wrap{flex:1;overflow-y:auto;min-height:40px}
+#log{padding:8px 13px;font-size:8px;line-height:1.85}
+.le{display:flex;align-items:center;gap:4px}
+.li{color:#0c1c30;width:22px;text-align:right;flex-shrink:0;font-size:7px}
+.lf{color:#4a7090}.lb{color:#5a2020}.la{color:#2a6040}.ls{color:#2a3548}
+#status{padding:5px 13px;border-top:1px solid #091828;font-size:8px;color:#1e3555;flex-shrink:0;min-height:22px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Maze Navigator</h1>
+  <span class="sub">GSN vs SPN vs Random DFS — Lee &amp; Holme · PRL 108, 128701 (2012)</span>
+  <span class="sub" style="margin-left:auto;color:#162840">Demo by Claude Sonnet 4.6</span>
+</header>
+<main>
+<div id="cv-wrap">
+  <canvas id="maze"></canvas>
+  <div id="hint">Click a cell → S &nbsp;|&nbsp; Click another → T</div>
+</div>
+
+<div id="panel">
+  <div class="sec">
+    <div class="sh">Maze Generation</div>
+    <div class="ag" id="gen-btns">
+      <button class="mg active" data-g="dfs">DFS<br><span style="font-size:7px;opacity:.6">winding</span></button>
+      <button class="mg" data-g="prim">Prim<br><span style="font-size:7px;opacity:.6">branchy</span></button>
+      <button class="mg" data-g="kruskal">Kruskal<br><span style="font-size:7px;opacity:.6">uniform</span></button>
+    </div>
+    <div class="sr"><span class="sl">Width</span><input type="range" id="sl-w" min="8" max="30" value="18"><span class="sv" id="v-w">18</span></div>
+    <div class="sr"><span class="sl">Height</span><input type="range" id="sl-h" min="6" max="22" value="13"><span class="sv" id="v-h">13</span></div>
+    <div class="br" style="margin-top:4px">
+      <button class="b-run" id="btn-gen" style="flex:2">⊕ Generate Maze</button>
+      <button class="b-neu" id="btn-rand-st">⚄ Random S/T</button>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sh">Navigate</div>
+    <div class="ag" id="nav-btns">
+      <button class="na na-gsn" data-a="gsn" disabled>GSN<br><span style="font-size:7px;opacity:.6">greedy</span></button>
+      <button class="na na-spn" data-a="spn" disabled>SPN<br><span style="font-size:7px;opacity:.6">shortest</span></button>
+      <button class="na na-rnd" data-a="rnd" disabled>RND<br><span style="font-size:7px;opacity:.6">SAW+bt</span></button>
+    </div>
+    <div class="br">
+      <button class="b-neu" id="btn-play" disabled>▶ Play</button>
+      <button class="b-neu" id="btn-step" disabled>▸ Step</button>
+      <button class="b-neu" id="btn-restart" disabled>⟳</button>
+      <button class="b-neu" id="btn-clr">⊘</button>
+    </div>
+    <div class="sr" style="margin-top:6px">
+      <span class="sl">Speed</span>
+      <input type="range" id="sl-sp" min="1" max="12" value="5">
+      <span class="sv" id="v-sp">med</span>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sh">Results</div>
+    <div class="sg">
+      <span class="l" style="color:#907020">d_g — GSN steps</span><span class="v" id="r-gsn">—</span>
+      <span class="l" style="color:#187048">d &nbsp;— shortest path</span><span class="v" id="r-spn">—</span>
+      <span class="l" style="color:#503888">d_r — random DFS</span><span class="v" id="r-rnd">—</span>
+      <span class="l">backtracks</span><span class="v" id="r-bt">—</span>
+      <div class="sep"></div>
+      <span class="l va">ν = d / d_g</span><span class="v va" id="r-nu">—</span>
+    </div>
+  </div>
+
+  <div class="sec" style="padding-bottom:6px;flex-shrink:0">
+    <div class="sh">How it works</div>
+    <div style="font-size:8px;color:#1a3050;line-height:1.65">
+      <b style="color:#fbbf2488">GSN</b> always moves to the unvisited neighbor whose direction most closely aligns with the target — angle θ between v<sub>i→t</sub> and v<sub>i→j</sub>. Backtracks only when all neighbors visited.<br><br>
+      <b style="color:#34d39988">SPN</b> follows the guaranteed optimal path (BFS). Requires complete map knowledge.<br><br>
+      <b style="color:#a78bfa88">Random DFS</b> is a self-avoiding walk — random unvisited neighbor each step, backtracking only when truly stuck.
+    </div>
+  </div>
+
+  <div style="border-bottom:1px solid #091828;padding:5px 13px;font-size:7px;color:#0e1e30;flex-shrink:0">PATH LOG</div>
+  <div id="log-wrap"><div id="log"></div></div>
+  <div id="status">Generate a maze, then click two cells.</div>
+</div>
+</main>
+
+<script>
+// ── Canvas ────────────────────────────────────────────────────────
+const canvas=document.getElementById('maze'), ctx=canvas.getContext('2d');
+function resize(){ const w=document.getElementById('cv-wrap'); canvas.width=w.clientWidth; canvas.height=w.clientHeight; }
+resize();
+
+// ── PRNG ──────────────────────────────────────────────────────────
+function mkRng(seed){ let s=(seed^0xdeadbeef)>>>0; return()=>{s^=s<<13;s^=s>>>17;s^=s<<5;return(s>>>0)/0x100000000;}; }
+function shuffle(arr,rng){ for(let i=arr.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
+
+// ── State ─────────────────────────────────────────────────────────
+let W=18,H=13,maze=null,srcCell=null,tgtCell=null;
+let algoName=null,fullPath=[],animAt=0,timer=null,playing=false,results={};
+
+// ── Maze generation ───────────────────────────────────────────────
+function genMaze(W,H,algo,rng){
+  const N=W*H, idx=(x,y)=>y*W+x;
+  const visited=new Set(), passages=new Set();
+  const ek=(a,b)=>`${Math.min(a,b)}_${Math.max(a,b)}`;
+  const nbrs=(x,y)=>{const ns=[];if(x>0)ns.push([x-1,y,idx(x-1,y)]);if(x<W-1)ns.push([x+1,y,idx(x+1,y)]);if(y>0)ns.push([x,y-1,idx(x,y-1)]);if(y<H-1)ns.push([x,y+1,idx(x,y+1)]);return ns;};
+
+  if(algo==='dfs'){
+    function dfs(x,y){
+      visited.add(idx(x,y));
+      const ns=shuffle(nbrs(x,y),rng).filter(([,,ni])=>!visited.has(ni));
+      for(const[nx,ny,ni]of ns)if(!visited.has(ni)){passages.add(ek(idx(x,y),ni));dfs(nx,ny);}
+    }
+    dfs(Math.floor(rng()*W),Math.floor(rng()*H));
+  } else if(algo==='prim'){
+    const s=Math.floor(rng()*N); visited.add(s);
+    let front=nbrs(s%W,Math.floor(s/W)).map(([,,ni])=>[s,ni]);
+    while(front.length){
+      const ri=Math.floor(rng()*front.length),[from,to]=front.splice(ri,1)[0];
+      if(!visited.has(to)){
+        visited.add(to); passages.add(ek(from,to));
+        const tx=to%W,ty=Math.floor(to/W);
+        nbrs(tx,ty).forEach(([,,ni])=>{ if(!visited.has(ni)) front.push([to,ni]); });
+      }
+    }
+  } else { // kruskal
+    const all=[]; for(let y=0;y<H;y++)for(let x=0;x<W;x++){const i=idx(x,y);if(x<W-1)all.push([i,idx(x+1,y)]);if(y<H-1)all.push([i,idx(x,y+1)]);}
+    shuffle(all,rng);
+    const par=Array.from({length:N},(_,i)=>i);
+    const find=x=>{while(par[x]!==x){par[x]=par[par[x]];x=par[x];}return x;};
+    for(const[a,b]of all)if(find(a)!==find(b)){par[find(a)]=find(b);passages.add(ek(a,b));}
+  }
+
+  const edges=[...passages].map(k=>k.split('_').map(Number));
+  const adj={};for(let i=0;i<N;i++)adj[i]=[];
+  for(const[a,b]of edges){adj[a].push(b);adj[b].push(a);}
+  // Wall map
+  const walls=Array.from({length:N},()=>({N:true,S:true,E:true,W:true}));
+  for(const[a,b]of edges){const ax=a%W,ay=Math.floor(a/W),bx=b%W,by=Math.floor(b/W);if(bx===ax+1){walls[a].E=false;walls[b].W=false;}else{walls[a].S=false;walls[b].N=false;}}
+  return{W,H,N,edges,adj,walls};
+}
+
+// Cell center position (for GSN angle computation)
+function cellPos(i){return{x:(i%W)+0.5,y:Math.floor(i/W)+0.5};}
+
+// ── Navigation algorithms ─────────────────────────────────────────
+function angTo(pi,pt,pj){
+  const tx=pt.x-pi.x,ty=pt.y-pi.y,jx=pj.x-pi.x,jy=pj.y-pi.y;
+  const dot=tx*jx+ty*jy,m=Math.hypot(tx,ty)*Math.hypot(jx,jy);
+  return m<1e-9?Math.PI:Math.acos(Math.max(-1,Math.min(1,dot/m)));
+}
+
+function runGSN(s,t){
+  const visited=new Set([s]),stack=[s],path=[{node:s,type:'start'}];
+  let cur=s;
+  const MAX=maze.N*maze.N;
+  for(let step=0;step<MAX&&cur!==t;step++){
+    let best=null,bestA=Infinity;
+    for(const n of maze.adj[cur]){if(!visited.has(n)){const a=angTo(cellPos(cur),cellPos(t),cellPos(n));if(a<bestA){bestA=a;best=n;}}}
+    if(best!==null){visited.add(best);cur=best;stack.push(cur);path.push({node:cur,type:cur===t?'arrive':'forward'});}
+    else{stack.pop();if(!stack.length)break;cur=stack[stack.length-1];path.push({node:cur,type:'backtrack'});}
+  }
+  return{path,bt:path.filter(s=>s.type==='backtrack').length,len:path.length-1};
+}
+
+function runSPN(s,t){
+  const prev=new Array(maze.N).fill(-1),vis=new Set([s]),q=[s];
+  while(q.length){const u=q.shift();if(u===t)break;for(const v of maze.adj[u])if(!vis.has(v)){vis.add(v);prev[v]=u;q.push(v);}}
+  const rev=[];for(let c=t;c!==-1;c=prev[c])rev.push(c);
+  const nodes=rev.reverse();
+  if(!nodes.length||nodes[0]!==s)return{path:[],bt:0,len:Infinity};
+  return{path:nodes.map((n,i)=>({node:n,type:i===0?'start':i===nodes.length-1?'arrive':'forward'})),bt:0,len:nodes.length-1};
+}
+
+function runRND(s,t,seed){
+  const rng=mkRng(seed),visited=new Set([s]),stack=[s],path=[{node:s,type:'start'}];
+  let cur=s;const MAX=maze.N*maze.N;
+  for(let step=0;step<MAX&&cur!==t;step++){
+    const ns=maze.adj[cur].filter(n=>!visited.has(n));
+    if(ns.length){const ch=ns[Math.floor(rng()*ns.length)];visited.add(ch);cur=ch;stack.push(cur);path.push({node:cur,type:cur===t?'arrive':'forward'});}
+    else{stack.pop();if(!stack.length)break;cur=stack[stack.length-1];path.push({node:cur,type:'backtrack'});}
+  }
+  return{path,bt:path.filter(s=>s.type==='backtrack').length,len:path.length-1};
+}
+
+// ── Drawing ───────────────────────────────────────────────────────
+function getCellSize(){
+  const pad=20,cw=canvas.width-2*pad,ch=canvas.height-2*pad;
+  return Math.max(4,Math.floor(Math.min(cw/W,ch/H)));
+}
+function getOff(cs){return{ox:Math.round((canvas.width-W*cs)/2),oy:Math.round((canvas.height-H*cs)/2)};}
+function cellToXY(i,cs,ox,oy){const x=i%W,y=Math.floor(i/W);return{x:ox+x*cs,y:oy+y*cs};}
+function canvasToCell(mx,my,cs,ox,oy){const x=Math.floor((mx-ox)/cs),y=Math.floor((my-oy)/cs);return(x>=0&&x<W&&y>=0&&y<H)?y*W+x:null;}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#060c18';ctx.fillRect(0,0,canvas.width,canvas.height);
+  if(!maze)return;
+
+  const cs=getCellSize(),{ox,oy}=getOff(cs);
+  const wt=Math.max(1,Math.round(cs/10)); // wall thickness
+
+  // Visited cells during animation
+  const visitedSet=new Set();
+  if(fullPath.length&&animAt>0)for(let i=0;i<=animAt&&i<fullPath.length;i++)visitedSet.add(fullPath[i].node);
+  const curNode=fullPath.length&&animAt<fullPath.length?fullPath[animAt].node:null;
+
+  const algoCol=algoName==='gsn'?'#fbbf24':algoName==='spn'?'#34d399':'#a78bfa';
+
+  // Cell fills
+  for(let i=0;i<maze.N;i++){
+    const{x,y}=cellToXY(i,cs,ox,oy);
+    if(i===srcCell){ctx.fillStyle='#f87171';ctx.fillRect(x+1,y+1,cs-1,cs-1);}
+    else if(i===tgtCell){ctx.fillStyle='#4ade80';ctx.fillRect(x+1,y+1,cs-1,cs-1);}
+    else if(i===curNode){ctx.fillStyle=algoCol+'40';ctx.fillRect(x+1,y+1,cs-1,cs-1);}
+    else if(visitedSet.has(i)){ctx.fillStyle=algoCol+'14';ctx.fillRect(x+1,y+1,cs-1,cs-1);}
+    else{ctx.fillStyle='#0a1628';ctx.fillRect(x+1,y+1,cs-1,cs-1);}
+  }
+
+  // Walls
+  ctx.strokeStyle='#2a5090';ctx.lineWidth=wt;
+  // Outer border
+  ctx.strokeRect(ox-wt/2,oy-wt/2,W*cs+wt,H*cs+wt);
+  // Internal walls
+  for(let i=0;i<maze.N;i++){
+    const x=i%W,y=Math.floor(i/W),lx=ox+x*cs,ly=oy+y*cs;
+    if(maze.walls[i].E&&x<W-1){ctx.beginPath();ctx.moveTo(lx+cs,ly);ctx.lineTo(lx+cs,ly+cs);ctx.stroke();}
+    if(maze.walls[i].S&&y<H-1){ctx.beginPath();ctx.moveTo(lx,ly+cs);ctx.lineTo(lx+cs,ly+cs);ctx.stroke();}
+  }
+
+  // Path edges
+  if(fullPath.length&&animAt>0){
+    const fwdEdges=[],btEdges=[];
+    for(let i=1;i<=animAt&&i<fullPath.length;i++){
+      const a=fullPath[i-1].node,b=fullPath[i].node;
+      (fullPath[i].type==='backtrack'?btEdges:fwdEdges).push([a,b]);
+    }
+    // Forward path
+    ctx.strokeStyle=algoCol;ctx.lineWidth=Math.max(2,cs/4);ctx.lineCap='round';
+    for(const[a,b]of fwdEdges){
+      const pa=cellToXY(a,cs,ox,oy),pb=cellToXY(b,cs,ox,oy);
+      ctx.beginPath();
+      ctx.moveTo(pa.x+cs/2,pa.y+cs/2);ctx.lineTo(pb.x+cs/2,pb.y+cs/2);ctx.stroke();
+    }
+    // Backtrack path (dashed, dimmer)
+    ctx.strokeStyle='#ef444455';ctx.lineWidth=Math.max(1,cs/6);ctx.setLineDash([cs/4,cs/4]);
+    for(const[a,b]of btEdges){
+      const pa=cellToXY(a,cs,ox,oy),pb=cellToXY(b,cs,ox,oy);
+      ctx.beginPath();ctx.moveTo(pa.x+cs/2,pa.y+cs/2);ctx.lineTo(pb.x+cs/2,pb.y+cs/2);ctx.stroke();
+    }
+    ctx.setLineDash([]);ctx.lineCap='butt';
+
+    // Angle viz at current node
+    if(algoName==='gsn'&&curNode!==null&&curNode!==tgtCell&&tgtCell!==null&&animAt>0){
+      drawAngleViz(curNode,cs,ox,oy,algoCol);
+    }
+  }
+
+  // Source / Target labels
+  if(srcCell!==null){
+    const{x,y}=cellToXY(srcCell,cs,ox,oy);
+    ctx.font=`bold ${Math.max(8,Math.round(cs*.45))}px JetBrains Mono,monospace`;
+    ctx.fillStyle='#060c18';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('S',x+cs/2,y+cs/2);
+  }
+  if(tgtCell!==null){
+    const{x,y}=cellToXY(tgtCell,cs,ox,oy);
+    ctx.font=`bold ${Math.max(8,Math.round(cs*.45))}px JetBrains Mono,monospace`;
+    ctx.fillStyle='#060c18';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('T',x+cs/2,y+cs/2);
+  }
+
+  // Current navigator dot
+  if(curNode!==null&&curNode!==srcCell&&curNode!==tgtCell&&fullPath.length){
+    const{x,y}=cellToXY(curNode,cs,ox,oy);
+    ctx.beginPath();ctx.arc(x+cs/2,y+cs/2,Math.max(3,cs/4),0,Math.PI*2);
+    ctx.fillStyle=algoCol;ctx.fill();
+  }
+}
+
+function drawAngleViz(node,cs,ox,oy,col){
+  const{x:cx,y:cy}=cellToXY(node,cs,ox,oy);
+  const px=cx+cs/2,py=cy+cs/2;
+  const tp=cellToXY(tgtCell,cs,ox,oy);
+  const tx=tp.x+cs/2-px,ty=tp.y+cs/2-py,tMag=Math.hypot(tx,ty);
+  if(tMag<2)return;
+  const tNx=tx/tMag,tNy=ty/tMag,len=Math.min(tMag*.4,cs*.9);
+  // Arrow toward target
+  ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+tNx*len,py+tNy*len);
+  ctx.strokeStyle=col+'55';ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.stroke();ctx.setLineDash([]);
+  const ax=px+tNx*len,ay=py+tNy*len,h=4,aAng=Math.atan2(tNy,tNx);
+  ctx.beginPath();ctx.moveTo(ax,ay);
+  ctx.lineTo(ax-h*Math.cos(aAng-.5),ay-h*Math.sin(aAng-.5));
+  ctx.lineTo(ax-h*Math.cos(aAng+.5),ay-h*Math.sin(aAng+.5));
+  ctx.closePath();ctx.fillStyle=col+'60';ctx.fill();
+  // Spokes to all neighbors
+  for(const n of maze.adj[node]){
+    const np=cellToXY(n,cs,ox,oy);
+    const jx=np.x+cs/2-px,jy=np.y+cs/2-py,jMag=Math.hypot(jx,jy);
+    if(jMag<2)continue;
+    const angle=angTo(cellPos(node),cellPos(tgtCell),cellPos(n));
+    const isMin=maze.adj[node].every(nn=>nn===n||angTo(cellPos(node),cellPos(tgtCell),cellPos(nn))>=angle);
+    ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+jx/jMag*cs*.4,py+jy/jMag*cs*.4);
+    ctx.strokeStyle=isMin?col+'cc':'#1a3a5040';ctx.lineWidth=isMin?1.2:.6;ctx.stroke();
+  }
+}
+
+// ── Interaction ───────────────────────────────────────────────────
+let pickMode=false,hovered=null;
+
+canvas.addEventListener('mousemove',e=>{
+  if(!maze)return;
+  const rect=canvas.getBoundingClientRect();
+  const mx=(e.clientX-rect.left)*canvas.width/rect.width;
+  const my=(e.clientY-rect.top)*canvas.height/rect.height;
+  const cs=getCellSize(),{ox,oy}=getOff(cs);
+  const n=canvasToCell(mx,my,cs,ox,oy);
+  if(n!==hovered){hovered=n;canvas.style.cursor=n!==null?'pointer':'default';}
+});
+
+canvas.addEventListener('click',e=>{
+  if(!maze||playing)return;
+  const rect=canvas.getBoundingClientRect();
+  const mx=(e.clientX-rect.left)*canvas.width/rect.width;
+  const my=(e.clientY-rect.top)*canvas.height/rect.height;
+  const cs=getCellSize(),{ox,oy}=getOff(cs);
+  const n=canvasToCell(mx,my,cs,ox,oy);
+  if(n===null)return;
+  stopAnim();clearPath();
+  if(n===srcCell){
+    srcCell=null;tgtCell=null;enableNav(false);
+    status('S cancelled. Click any cell to set a new source.');
+  } else if(srcCell===null){
+    srcCell=n;status(`Source S = cell ${n}. Click another cell for target.`);
+  } else if(tgtCell===null){
+    tgtCell=n;enableNav(true);status(`S=${srcCell}, T=${tgtCell}. Choose an algorithm.`);
+  } else {
+    srcCell=n;tgtCell=null;enableNav(false);status(`Source reset. Click another cell for target.`);
+  }
+  draw();updateStats();
+});
+
+// ── UI helpers ────────────────────────────────────────────────────
+function enableNav(on){document.querySelectorAll('.na').forEach(b=>b.disabled=!on);}
+function getDelay(){const v=+document.getElementById('sl-sp').value;return Math.round(580-v*44);}
+function status(m){document.getElementById('status').textContent=m;}
+
+function clearPath(){
+  fullPath=[];animAt=0;algoName=null;results={};
+  document.getElementById('btn-play').disabled=true;
+  document.getElementById('btn-step').disabled=true;
+  document.getElementById('btn-restart').disabled=true;
+  document.querySelectorAll('.na').forEach(b=>b.classList.remove('active'));
+  updateStats();updateLog([]);
+}
+
+function stopAnim(){
+  if(timer){clearInterval(timer);timer=null;}
+  playing=false;document.getElementById('btn-play').textContent='▶ Play';
+}
+
+function runAlgo(a){
+  if(srcCell===null||tgtCell===null)return;
+  stopAnim();clearPath();algoName=a;
+  if(a==='gsn')results.gsn=runGSN(srcCell,tgtCell);
+  else if(a==='spn')results.spn=runSPN(srcCell,tgtCell);
+  else results.rnd=runRND(srcCell,tgtCell,Date.now());
+  if(!results.spn)results.spn=runSPN(srcCell,tgtCell);
+  fullPath=results[a].path;animAt=0;
+  document.getElementById('btn-play').disabled=false;
+  document.getElementById('btn-step').disabled=false;
+  document.getElementById('btn-restart').disabled=false;
+  document.querySelectorAll('.na').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`.na-${a}`).classList.add('active');
+  draw();updateStats();updateLog(fullPath.slice(0,1));
+  const res=results[a];
+  status(`${a.toUpperCase()}: ${res.len} steps, ${res.bt} backtracks. Press ▶ Play.`);
+  togglePlay();
+}
+
+function stepFwd(){
+  if(animAt<fullPath.length-1){animAt++;draw();updateLog(fullPath.slice(0,animAt+1));if(animAt===fullPath.length-1)done();}
+  else done();
+}
+function done(){stopAnim();const r=results[algoName];status(`Done — ${r.len} steps, ${r.bt} backtracks, ν=${document.getElementById('r-nu').textContent}`);}
+function togglePlay(){
+  playing=!playing;document.getElementById('btn-play').textContent=playing?'⏸ Pause':'▶ Play';
+  if(playing){if(animAt>=fullPath.length-1)animAt=0;timer=setInterval(()=>{if(animAt>=fullPath.length-1)done();else stepFwd();},getDelay());}
+  else{clearInterval(timer);timer=null;}
+}
+
+function updateStats(){
+  const dg=results.gsn?results.gsn.len:null;
+  const d=results.spn?results.spn.len:null;
+  const dr=results.rnd?results.rnd.len:null;
+  const bt=results[algoName]?results[algoName].bt:null;
+  document.getElementById('r-gsn').textContent=dg??'—';
+  document.getElementById('r-spn').textContent=d??'—';
+  document.getElementById('r-rnd').textContent=dr??'—';
+  document.getElementById('r-bt').textContent=bt??'—';
+  document.getElementById('r-nu').textContent=(dg&&d&&dg>0)?(d/dg).toFixed(3):'—';
+}
+
+function updateLog(path){
+  const el=document.getElementById('log');
+  if(!path||!path.length){el.innerHTML='';return;}
+  const show=path.length>150?path.slice(-150):path;
+  const off=path.length-show.length;
+  el.innerHTML=(off>0?`<div style="font-size:7px;color:#0e1e30;margin-bottom:3px">… ${off} earlier steps</div>`:'')+
+    show.map((s,i)=>{
+      const idx=i+off;
+      const cls=s.type==='backtrack'?'lb':s.type==='arrive'?'la':s.type==='start'?'ls':'lf';
+      const icon=s.type==='backtrack'?'↩':s.type==='arrive'?'✓':s.type==='start'?'●':'→';
+      const cx=s.node%W,cy=Math.floor(s.node/W);
+      return `<div class="le"><span class="li">${idx}</span><span class="${cls}">${icon} (${cx},${cy})</span></div>`;
+    }).join('');
+  el.parentElement.scrollTop=el.parentElement.scrollHeight;
+}
+
+// ── Generate maze ─────────────────────────────────────────────────
+let genAlgo='dfs';
+function generate(){
+  stopAnim();clearPath();srcCell=null;tgtCell=null;enableNav(false);
+  W=+document.getElementById('sl-w').value;
+  H=+document.getElementById('sl-h').value;
+  const rng=mkRng(Date.now());
+  maze=genMaze(W,H,genAlgo,rng);
+  draw();
+  status(`${W}×${H} ${genAlgo.toUpperCase()} maze (${maze.N} cells, ${maze.edges.length} passages). Click a cell for S.`);
+}
+
+function randomST(){
+  if(!maze)return;
+  stopAnim();clearPath();
+  const rng=mkRng(Date.now());
+  srcCell=Math.floor(rng()*maze.N);
+  tgtCell=Math.floor(rng()*maze.N);
+  while(tgtCell===srcCell)tgtCell=Math.floor(rng()*maze.N);
+  enableNav(true);draw();
+  status(`Random S=${srcCell}, T=${tgtCell}. Choose an algorithm.`);
+}
+
+// ── Button wiring ─────────────────────────────────────────────────
+document.getElementById('btn-gen').onclick=generate;
+document.getElementById('btn-rand-st').onclick=randomST;
+document.getElementById('btn-play').onclick=togglePlay;
+document.getElementById('btn-step').onclick=()=>{stopAnim();stepFwd();};
+document.getElementById('btn-restart').onclick=()=>{stopAnim();animAt=0;draw();updateLog(fullPath.slice(0,1));};
+document.getElementById('btn-clr').onclick=()=>{stopAnim();clearPath();srcCell=null;tgtCell=null;enableNav(false);draw();status('Cleared. Click a cell for source.');};
+
+document.querySelectorAll('[data-g]').forEach(btn=>{
+  btn.onclick=()=>{
+    genAlgo=btn.dataset.g;
+    document.querySelectorAll('[data-g]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  };
+});
+
+document.querySelectorAll('[data-a]').forEach(btn=>{
+  btn.onclick=()=>runAlgo(btn.dataset.a);
+});
+
+document.getElementById('sl-w').oninput=e=>{W=+e.target.value;document.getElementById('v-w').textContent=W;};
+document.getElementById('sl-h').oninput=e=>{H=+e.target.value;document.getElementById('v-h').textContent=H;};
+document.getElementById('sl-sp').oninput=e=>{const lbls=['','v.slow','slow','','med','','fast','','','','','v.fast','max'];document.getElementById('v-sp').textContent=lbls[+e.target.value]||'';};
+
+window.addEventListener('resize',()=>{resize();draw();});
+
+// ── Init ──────────────────────────────────────────────────────────
+generate();
+</script>
+</body>
+</html>
