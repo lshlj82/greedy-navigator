@@ -12,11 +12,8 @@ Interactive demos of the **Greedy Spatial Navigation (GSN)** algorithm, its layo
 > https://doi.org/10.1140/epjst/e2013-01720-8
 
 **Live demo (navigation):** https://lshlj82.github.io/greedy-navigator/
-
 **Live demo (optimizer):** https://lshlj82.github.io/greedy-navigator/GSN_optimizer.html
-
 **Live demo (city plans):** https://lshlj82.github.io/greedy-navigator/GSN_shortcut.html
-
 **Live demo (maze):** https://lshlj82.github.io/greedy-navigator/maze_navigator.html
 
 *Demos created by Claude Sonnet 4.6.*
@@ -147,6 +144,7 @@ All three algorithms generate a **perfect maze** — a spanning tree of the grid
 - Click any cell to set source S; click S again to cancel and re-select
 - Click another cell to set target T
 - **⚄ Random S/T** button for instant random placement
+- **▶ Navigate Yourself** — use arrow keys or click highlighted adjacent cells to find your own path; Backspace to undo; your step count and backtrack count appear in the results panel and are compared against the algorithms when you reach T
 - Step-by-step or continuous animation for GSN, SPN, and Random DFS
 - Angle-spoke visualization showing the direction decision at each GSN step
 - Live $d_g$, $d$, $d_r$, $\nu$, and backtrack count
@@ -154,7 +152,7 @@ All three algorithms generate a **perfect maze** — a spanning tree of the grid
 **Usage:**
 1. Choose a generation algorithm and size, then press **⊕ Generate Maze**
 2. Click any cell for S, another for T (or use **⚄ Random S/T**)
-3. Press **GSN**, **SPN**, or **RND** to animate that strategy
+3. Press **▶ Navigate Yourself** to explore the maze manually with arrow keys, then run **GSN**, **SPN**, or **RND** on the same pair to compare
 
 ---
 

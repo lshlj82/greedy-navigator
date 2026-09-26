@@ -10,17 +10,17 @@
 body{background:#060c18;color:#b8cce0;font-family:'JetBrains Mono',monospace;height:100vh;display:flex;flex-direction:column;overflow:hidden}
 header{padding:9px 18px;border-bottom:1px solid #0f2040;display:flex;align-items:baseline;gap:12px;flex-shrink:0}
 h1{font-size:12px;font-weight:600;letter-spacing:.06em;color:#ddeeff}
-.sub{font-size:9px;color:#1e3555}
+.sub{font-size:9px;color:#4a7595}
 main{flex:1;display:flex;min-height:0}
 #cv-wrap{flex:1;position:relative;min-width:0}
 #maze{display:block;width:100%;height:100%}
-#hint{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:9px;color:#1e3555;pointer-events:none;white-space:nowrap}
+#hint{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:9px;color:#4a7595;pointer-events:none;white-space:nowrap}
 #panel{width:268px;flex-shrink:0;border-left:1px solid #0f2040;display:flex;flex-direction:column;overflow-y:auto;background:#040a14}
 .sec{padding:11px 13px;border-bottom:1px solid #091828;flex-shrink:0}
-.sh{font-size:7px;font-weight:600;letter-spacing:.2em;color:#142030;margin-bottom:8px;text-transform:uppercase}
+.sh{font-size:7px;font-weight:600;letter-spacing:.2em;color:#3a6090;margin-bottom:8px;text-transform:uppercase}
 /* Slider rows */
 .sr{display:flex;align-items:center;gap:8px;margin-bottom:5px}
-.sl{font-size:9px;color:#1a3050;flex:1}
+.sl{font-size:9px;color:#4a7090;flex:1}
 .sv{font-size:9px;color:#4a7090;width:26px;text-align:right;flex-shrink:0}
 input[type=range]{flex:1;accent-color:#2a5090;height:2px;cursor:pointer}
 /* Algo grid */
@@ -43,25 +43,30 @@ button:not(:disabled):hover{opacity:.72}
 .na-gsn.active{background:#12090a;border-color:#7a3a00;color:#fbbf24}
 .na-spn.active{background:#010f08;border-color:#065040;color:#34d399}
 .na-rnd.active{background:#09051a;border-color:#30186a;color:#a78bfa}
+.na-man{background:#0a0f1c;border:1px solid #1e3050;color:#243a55;font-size:8px;padding:5px 4px;border-radius:2px;cursor:pointer;text-align:center;font-family:'JetBrains Mono',monospace;font-weight:600;letter-spacing:.04em;transition:all .1s;grid-column:1/-1;margin-top:2px}
+.na-man.active{background:#0e1a10;border-color:#4a9060;color:#86efac}
+.na-man.playing{background:#0e1810;border-color:#1a5030;color:#4ade80;animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.avail-hint{font-size:7px;color:#4a7090;margin-top:5px;text-align:center;line-height:1.6}
 .na:hover{opacity:.8}
 /* Stats */
 .sg{display:grid;grid-template-columns:1fr auto;row-gap:3px;font-size:9px}
-.sg .l{color:#1a3050}.sg .v{text-align:right;color:#406880;font-weight:500}
+.sg .l{color:#4a7090}.sg .v{text-align:right;color:#406880;font-weight:500}
 .sg .va{color:#34d399}.sg .sep{grid-column:1/-1;height:1px;background:#091828;margin:2px 0}
 /* Log */
 #log-wrap{flex:1;overflow-y:auto;min-height:40px}
 #log{padding:8px 13px;font-size:8px;line-height:1.85}
 .le{display:flex;align-items:center;gap:4px}
-.li{color:#0c1c30;width:22px;text-align:right;flex-shrink:0;font-size:7px}
-.lf{color:#4a7090}.lb{color:#5a2020}.la{color:#2a6040}.ls{color:#2a3548}
-#status{padding:5px 13px;border-top:1px solid #091828;font-size:8px;color:#1e3555;flex-shrink:0;min-height:22px}
+.li{color:#3a5570;width:22px;text-align:right;flex-shrink:0;font-size:7px}
+.lf{color:#4a7090}.lb{color:#a05050}.la{color:#4a9060}.ls{color:#5a7090}
+#status{padding:5px 13px;border-top:1px solid #091828;font-size:8px;color:#4a7595;flex-shrink:0;min-height:22px}
 </style>
 </head>
 <body>
 <header>
   <h1>Maze Navigator</h1>
   <span class="sub">GSN vs SPN vs Random DFS — Lee &amp; Holme · PRL 108, 128701 (2012)</span>
-  <span class="sub" style="margin-left:auto;color:#162840">Demo by Claude Sonnet 4.6</span>
+  <span class="sub" style="margin-left:auto;color:#3a5878">Demo by Claude Sonnet 4.6</span>
 </header>
 <main>
 <div id="cv-wrap">
@@ -91,6 +96,7 @@ button:not(:disabled):hover{opacity:.72}
       <button class="na na-gsn" data-a="gsn" disabled>GSN<br><span style="font-size:7px;opacity:.6">greedy</span></button>
       <button class="na na-spn" data-a="spn" disabled>SPN<br><span style="font-size:7px;opacity:.6">shortest</span></button>
       <button class="na na-rnd" data-a="rnd" disabled>RND<br><span style="font-size:7px;opacity:.6">SAW+bt</span></button>
+      <button class="na na-man" id="btn-man" disabled>▶ Navigate Yourself ◀</button>
     </div>
     <div class="br">
       <button class="b-neu" id="btn-play" disabled>▶ Play</button>
@@ -108,9 +114,12 @@ button:not(:disabled):hover{opacity:.72}
   <div class="sec">
     <div class="sh">Results</div>
     <div class="sg">
-      <span class="l" style="color:#907020">d_g — GSN steps</span><span class="v" id="r-gsn">—</span>
-      <span class="l" style="color:#187048">d &nbsp;— shortest path</span><span class="v" id="r-spn">—</span>
-      <span class="l" style="color:#503888">d_r — random DFS</span><span class="v" id="r-rnd">—</span>
+      <span class="l" style="color:#86efac">You &nbsp;&nbsp;— your steps</span><span class="v" id="r-man">—</span>
+      <span class="l" style="color:#86efac99">↳ backtracks</span><span class="v" id="r-mbt">—</span>
+      <div class="sep"></div>
+      <span class="l" style="color:#c09030">d_g — GSN steps</span><span class="v" id="r-gsn">—</span>
+      <span class="l" style="color:#2a9060">d &nbsp;— shortest path</span><span class="v" id="r-spn">—</span>
+      <span class="l" style="color:#8060c0">d_r — random DFS</span><span class="v" id="r-rnd">—</span>
       <span class="l">backtracks</span><span class="v" id="r-bt">—</span>
       <div class="sep"></div>
       <span class="l va">ν = d / d_g</span><span class="v va" id="r-nu">—</span>
@@ -119,14 +128,14 @@ button:not(:disabled):hover{opacity:.72}
 
   <div class="sec" style="padding-bottom:6px;flex-shrink:0">
     <div class="sh">How it works</div>
-    <div style="font-size:8px;color:#1a3050;line-height:1.65">
-      <b style="color:#fbbf2488">GSN</b> always moves to the unvisited neighbor whose direction most closely aligns with the target — angle θ between v<sub>i→t</sub> and v<sub>i→j</sub>. Backtracks only when all neighbors visited.<br><br>
-      <b style="color:#34d39988">SPN</b> follows the guaranteed optimal path (BFS). Requires complete map knowledge.<br><br>
-      <b style="color:#a78bfa88">Random DFS</b> is a self-avoiding walk — random unvisited neighbor each step, backtracking only when truly stuck.
+    <div style="font-size:8px;color:#4a7090;line-height:1.65">
+      <b style="color:#fbbf24">GSN</b> always moves to the unvisited neighbor whose direction most closely aligns with the target — angle θ between v<sub>i→t</sub> and v<sub>i→j</sub>. Backtracks only when all neighbors visited.<br><br>
+      <b style="color:#34d399">SPN</b> follows the guaranteed optimal path (BFS). Requires complete map knowledge.<br><br>
+      <b style="color:#a78bfa">Random DFS</b> is a self-avoiding walk — random unvisited neighbor each step, backtracking only when truly stuck.
     </div>
   </div>
 
-  <div style="border-bottom:1px solid #091828;padding:5px 13px;font-size:7px;color:#0e1e30;flex-shrink:0">PATH LOG</div>
+  <div style="border-bottom:1px solid #091828;padding:5px 13px;font-size:7px;color:#3a5570;flex-shrink:0">PATH LOG</div>
   <div id="log-wrap"><div id="log"></div></div>
   <div id="status">Generate a maze, then click two cells.</div>
 </div>
@@ -145,6 +154,8 @@ function shuffle(arr,rng){ for(let i=arr.length-1;i>0;i--){const j=Math.floor(rn
 // ── State ─────────────────────────────────────────────────────────
 let W=18,H=13,maze=null,srcCell=null,tgtCell=null;
 let algoName=null,fullPath=[],animAt=0,timer=null,playing=false,results={};
+// Manual navigation state
+let manMode=false,manPath=[],manVisited=new Set(),manCur=null;
 
 // ── Maze generation ───────────────────────────────────────────────
 function genMaze(W,H,algo,rng){
@@ -258,7 +269,10 @@ function draw(){
   // Cell fills
   for(let i=0;i<maze.N;i++){
     const{x,y}=cellToXY(i,cs,ox,oy);
-    if(i===srcCell){ctx.fillStyle='#f87171';ctx.fillRect(x+1,y+1,cs-1,cs-1);}
+    // Available moves in manual mode
+    if(manMode&&manCur!==null&&maze.adj[manCur].includes(i)&&i!==manCur){
+      ctx.fillStyle='#86efac18';ctx.fillRect(x+1,y+1,cs-1,cs-1);
+    } else if(i===srcCell){ctx.fillStyle='#f87171';ctx.fillRect(x+1,y+1,cs-1,cs-1);}
     else if(i===tgtCell){ctx.fillStyle='#4ade80';ctx.fillRect(x+1,y+1,cs-1,cs-1);}
     else if(i===curNode){ctx.fillStyle=algoCol+'40';ctx.fillRect(x+1,y+1,cs-1,cs-1);}
     else if(visitedSet.has(i)){ctx.fillStyle=algoCol+'14';ctx.fillRect(x+1,y+1,cs-1,cs-1);}
@@ -276,7 +290,34 @@ function draw(){
     if(maze.walls[i].S&&y<H-1){ctx.beginPath();ctx.moveTo(lx,ly+cs);ctx.lineTo(lx+cs,ly+cs);ctx.stroke();}
   }
 
-  // Path edges
+  // Manual path drawing
+  if(manMode||manPath.length>0){
+    const manCol='#86efac';
+    const fwdE=[],btE=[];
+    for(let i=1;i<manPath.length;i++){
+      (manPath[i].type==='backtrack'?btE:fwdE).push([manPath[i-1].node,manPath[i].node]);
+    }
+    ctx.strokeStyle=manCol;ctx.lineWidth=Math.max(2,cs/4);ctx.lineCap='round';
+    for(const[a,b]of fwdE){
+      const pa=cellToXY(a,cs,ox,oy),pb=cellToXY(b,cs,ox,oy);
+      ctx.beginPath();ctx.moveTo(pa.x+cs/2,pa.y+cs/2);ctx.lineTo(pb.x+cs/2,pb.y+cs/2);ctx.stroke();
+    }
+    ctx.strokeStyle='#ef444455';ctx.lineWidth=Math.max(1,cs/6);ctx.setLineDash([cs/4,cs/4]);
+    for(const[a,b]of btE){
+      const pa=cellToXY(a,cs,ox,oy),pb=cellToXY(b,cs,ox,oy);
+      ctx.beginPath();ctx.moveTo(pa.x+cs/2,pa.y+cs/2);ctx.lineTo(pb.x+cs/2,pb.y+cs/2);ctx.stroke();
+    }
+    ctx.setLineDash([]);ctx.lineCap='butt';
+    // Current manual position
+    if(manCur!==null&&manCur!==srcCell&&manCur!==tgtCell){
+      const{x,y}=cellToXY(manCur,cs,ox,oy);
+      ctx.beginPath();ctx.arc(x+cs/2,y+cs/2,Math.max(3,cs/3),0,Math.PI*2);
+      ctx.fillStyle='#86efac';ctx.fill();
+      ctx.strokeStyle='#ffffff40';ctx.lineWidth=1;ctx.stroke();
+    }
+  }
+
+  // Algorithm path edges
   if(fullPath.length&&animAt>0){
     const fwdEdges=[],btEdges=[];
     for(let i=1;i<=animAt&&i<fullPath.length;i++){
@@ -367,21 +408,26 @@ canvas.addEventListener('mousemove',e=>{
 });
 
 canvas.addEventListener('click',e=>{
-  if(!maze||playing)return;
   const rect=canvas.getBoundingClientRect();
   const mx=(e.clientX-rect.left)*canvas.width/rect.width;
   const my=(e.clientY-rect.top)*canvas.height/rect.height;
   const cs=getCellSize(),{ox,oy}=getOff(cs);
   const n=canvasToCell(mx,my,cs,ox,oy);
+  // Manual mode: move to clicked cell
+  if(manMode){if(n!==null)manMove(n);return;}
+  if(!maze||playing)return;
   if(n===null)return;
   stopAnim();clearPath();
+  // Also clear manual path when setting new S/T
+  manPath=[];manVisited=new Set();manCur=null;manMode=false;
+  document.getElementById('btn-man').classList.remove('active','playing');
   if(n===srcCell){
     srcCell=null;tgtCell=null;enableNav(false);
     status('S cancelled. Click any cell to set a new source.');
   } else if(srcCell===null){
     srcCell=n;status(`Source S = cell ${n}. Click another cell for target.`);
   } else if(tgtCell===null){
-    tgtCell=n;enableNav(true);status(`S=${srcCell}, T=${tgtCell}. Choose an algorithm.`);
+    tgtCell=n;enableNav(true);status(`S=${srcCell}, T=${tgtCell}. Choose an algorithm or navigate yourself.`);
   } else {
     srcCell=n;tgtCell=null;enableNav(false);status(`Source reset. Click another cell for target.`);
   }
@@ -389,7 +435,10 @@ canvas.addEventListener('click',e=>{
 });
 
 // ── UI helpers ────────────────────────────────────────────────────
-function enableNav(on){document.querySelectorAll('.na').forEach(b=>b.disabled=!on);}
+function enableNav(on){
+  document.querySelectorAll('.na').forEach(b=>b.disabled=!on);
+  document.getElementById('btn-man').disabled=!on;
+}
 function getDelay(){const v=+document.getElementById('sl-sp').value;return Math.round(580-v*44);}
 function status(m){document.getElementById('status').textContent=m;}
 
@@ -442,6 +491,10 @@ function updateStats(){
   const d=results.spn?results.spn.len:null;
   const dr=results.rnd?results.rnd.len:null;
   const bt=results[algoName]?results[algoName].bt:null;
+  const mlen=manPath.length>1?manPath.length-1:null;
+  const mbt=manPath.length>0?manPath.filter(s=>s.type==='backtrack').length:null;
+  document.getElementById('r-man').textContent=mlen??'—';
+  document.getElementById('r-mbt').textContent=mbt??'—';
   document.getElementById('r-gsn').textContent=dg??'—';
   document.getElementById('r-spn').textContent=d??'—';
   document.getElementById('r-rnd').textContent=dr??'—';
@@ -454,7 +507,7 @@ function updateLog(path){
   if(!path||!path.length){el.innerHTML='';return;}
   const show=path.length>150?path.slice(-150):path;
   const off=path.length-show.length;
-  el.innerHTML=(off>0?`<div style="font-size:7px;color:#0e1e30;margin-bottom:3px">… ${off} earlier steps</div>`:'')+
+  el.innerHTML=(off>0?`<div style="font-size:7px;color:#3a5570;margin-bottom:3px">… ${off} earlier steps</div>`:'')+
     show.map((s,i)=>{
       const idx=i+off;
       const cls=s.type==='backtrack'?'lb':s.type==='arrive'?'la':s.type==='start'?'ls':'lf';
@@ -469,6 +522,8 @@ function updateLog(path){
 let genAlgo='dfs';
 function generate(){
   stopAnim();clearPath();srcCell=null;tgtCell=null;enableNav(false);
+  manPath=[];manVisited=new Set();manCur=null;manMode=false;
+  document.getElementById('btn-man').classList.remove('active','playing');
   W=+document.getElementById('sl-w').value;
   H=+document.getElementById('sl-h').value;
   const rng=mkRng(Date.now());
@@ -488,13 +543,78 @@ function randomST(){
   status(`Random S=${srcCell}, T=${tgtCell}. Choose an algorithm.`);
 }
 
+// ── Manual navigation ─────────────────────────────────────────────
+function startManual(){
+  if(srcCell===null||tgtCell===null)return;
+  stopAnim();
+  // Clear algorithm path but keep manual state
+  fullPath=[];animAt=0;algoName=null;
+  document.getElementById('btn-play').disabled=true;
+  document.getElementById('btn-step').disabled=true;
+  document.getElementById('btn-restart').disabled=true;
+  document.querySelectorAll('.na').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn-man').classList.add('active','playing');
+  manMode=true;manCur=srcCell;
+  manPath=[{node:srcCell,type:'start'}];
+  manVisited=new Set([srcCell]);
+  draw();updateLog(manPath);updateStats();
+  status('Navigate with ← ↑ → ↓ arrow keys, or click a highlighted cell. Backspace to undo.');
+}
+
+function manMove(next){
+  if(!manMode||next===null||next===manCur)return;
+  if(!maze.adj[manCur].includes(next))return; // no passage
+  const type=manVisited.has(next)?'backtrack':(next===tgtCell?'arrive':'forward');
+  if(type!=='backtrack')manVisited.add(next);
+  manCur=next;
+  manPath.push({node:next,type});
+  draw();updateLog(manPath);updateStats();
+  if(next===tgtCell){
+    manMode=false;
+    document.getElementById('btn-man').classList.remove('playing');
+    if(!results.spn)results.spn=runSPN(srcCell,tgtCell);
+    const mySteps=manPath.length-1;
+    const opt=results.spn.len;
+    const eff=opt>0?((opt/mySteps)*100).toFixed(0):'?';
+    status(`You reached T in ${mySteps} steps! Optimal is ${opt}. Your efficiency: ${eff}%. Try an algorithm to compare.`);
+  }
+}
+
+function manUndo(){
+  if(!manMode||manPath.length<=1)return;
+  manPath.pop();
+  manCur=manPath[manPath.length-1].node;
+  // Rebuild visited from path
+  manVisited=new Set();
+  for(const s of manPath)if(s.type!=='backtrack'||manPath.indexOf(s)===0)manVisited.add(s.node);
+  draw();updateLog(manPath);updateStats();
+}
+
+// Keyboard navigation
+document.addEventListener('keydown',e=>{
+  if(!manMode||!maze)return;
+  const x=manCur%W,y=Math.floor(manCur/W);
+  let next=null;
+  if(e.key==='ArrowUp'&&y>0)next=(y-1)*W+x;
+  else if(e.key==='ArrowDown'&&y<H-1)next=(y+1)*W+x;
+  else if(e.key==='ArrowLeft'&&x>0)next=y*W+(x-1);
+  else if(e.key==='ArrowRight'&&x<W-1)next=y*W+(x+1);
+  else if(e.key==='Backspace'||e.key==='z'||e.key==='Z'){e.preventDefault();manUndo();return;}
+  if(next!==null){e.preventDefault();manMove(next);}
+});
+
 // ── Button wiring ─────────────────────────────────────────────────
 document.getElementById('btn-gen').onclick=generate;
 document.getElementById('btn-rand-st').onclick=randomST;
 document.getElementById('btn-play').onclick=togglePlay;
 document.getElementById('btn-step').onclick=()=>{stopAnim();stepFwd();};
 document.getElementById('btn-restart').onclick=()=>{stopAnim();animAt=0;draw();updateLog(fullPath.slice(0,1));};
-document.getElementById('btn-clr').onclick=()=>{stopAnim();clearPath();srcCell=null;tgtCell=null;enableNav(false);draw();status('Cleared. Click a cell for source.');};
+document.getElementById('btn-clr').onclick=()=>{
+  stopAnim();clearPath();srcCell=null;tgtCell=null;enableNav(false);
+  manPath=[];manVisited=new Set();manCur=null;manMode=false;
+  document.getElementById('btn-man').classList.remove('active','playing');
+  draw();status('Cleared. Click a cell for source.');
+};
 
 document.querySelectorAll('[data-g]').forEach(btn=>{
   btn.onclick=()=>{
@@ -503,6 +623,8 @@ document.querySelectorAll('[data-g]').forEach(btn=>{
     btn.classList.add('active');
   };
 });
+
+document.getElementById('btn-man').onclick=startManual;
 
 document.querySelectorAll('[data-a]').forEach(btn=>{
   btn.onclick=()=>runAlgo(btn.dataset.a);
