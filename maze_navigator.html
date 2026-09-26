@@ -30,20 +30,20 @@ input[type=range]{flex:1;accent-color:#2a5090;height:2px;cursor:pointer}
 button{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;padding:5px 7px;border-radius:2px;border:1px solid;cursor:pointer;transition:opacity .1s;display:flex;align-items:center;gap:5px;white-space:nowrap}
 button:disabled{opacity:.2;cursor:default}
 button:not(:disabled):hover{opacity:.72}
-.b-run{background:#071510;border-color:#185040;color:#34d399}
-.b-neu{background:#060e1c;border-color:#0f2035;color:#2a4560}
+.b-run{background:#071510;border-color:#2a7050;color:#34d399}
+.b-neu{background:#0a1628;border-color:#1e3a58;color:#5a7a9a}
 .br{display:flex;gap:4px}
 .br button{flex:1;justify-content:center}
 /* Maze gen buttons */
-.mg{background:#060e1c;border:1px solid #0f2035;color:#243a55;font-size:8px;padding:5px 4px;border-radius:2px;cursor:pointer;text-align:center;transition:all .1s;font-family:'JetBrains Mono',monospace;font-weight:500}
+.mg{background:#0a1628;border:1px solid #1e3a58;color:#5a8ab0;font-size:8px;padding:5px 4px;border-radius:2px;cursor:pointer;text-align:center;transition:all .1s;font-family:'JetBrains Mono',monospace;font-weight:500}
 .mg.active{background:#0a1e36;border-color:#1e4070;color:#6090c8}
 .mg:hover{opacity:.8}
 /* Navigation algo buttons */
-.na{background:#060e1c;border:1px solid #0f2035;color:#243a55;font-size:8px;padding:5px 4px;border-radius:2px;cursor:pointer;text-align:center;font-family:'JetBrains Mono',monospace;font-weight:600;letter-spacing:.04em;transition:all .1s}
+.na{background:#0a1628;border:1px solid #1e3a58;color:#5a8ab0;font-size:8px;padding:5px 4px;border-radius:2px;cursor:pointer;text-align:center;font-family:'JetBrains Mono',monospace;font-weight:600;letter-spacing:.04em;transition:all .1s}
 .na-gsn.active{background:#12090a;border-color:#7a3a00;color:#fbbf24}
 .na-spn.active{background:#010f08;border-color:#065040;color:#34d399}
 .na-rnd.active{background:#09051a;border-color:#30186a;color:#a78bfa}
-.na-man{background:#0a0f1c;border:1px solid #1e3050;color:#243a55;font-size:8px;padding:5px 4px;border-radius:2px;cursor:pointer;text-align:center;font-family:'JetBrains Mono',monospace;font-weight:600;letter-spacing:.04em;transition:all .1s;grid-column:1/-1;margin-top:2px}
+.na-man{background:#0a1628;border:1px solid #1e3a58;color:#5a8ab0;font-size:8px;padding:5px 4px;border-radius:2px;cursor:pointer;text-align:center;font-family:'JetBrains Mono',monospace;font-weight:600;letter-spacing:.04em;transition:all .1s;grid-column:1/-1;margin-top:2px}
 .na-man.active{background:#0e1a10;border-color:#4a9060;color:#86efac}
 .na-man.playing{background:#0e1810;border-color:#1a5030;color:#4ade80;animation:pulse 1.2s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
@@ -65,7 +65,7 @@ button:not(:disabled):hover{opacity:.72}
 <body>
 <header>
   <h1>Maze Navigator</h1>
-  <span class="sub">GSN vs SPN vs Random DFS — Lee &amp; Holme · PRL 108, 128701 (2012)</span>
+  <span class="sub">GSN vs SPN vs Random DFS &nbsp;·&nbsp; <a href="https://link.aps.org/doi/10.1103/PhysRevLett.108.128701" target="_blank" style="color:#4a7595;text-decoration:none" onmouseover="this.style.color='#80b0d8'" onmouseout="this.style.color='#4a7595'">Sang Hoon Lee &amp; Petter Holme · <em>Phys. Rev. Lett.</em> 108, 128701 (2012)</a></span>
   <span class="sub" style="margin-left:auto;color:#3a5878">Demo by Claude Sonnet 4.6</span>
 </header>
 <main>
