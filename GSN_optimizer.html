@@ -2,75 +2,160 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<!-- theme-toggle:start -->
+<script>
+(function(){
+  var KEY='lshlj82-demo-theme', root=document.documentElement, Q='(prefers-color-scheme: dark)';
+  var nativeMM=window.matchMedia?window.matchMedia.bind(window):null;
+  var sys=nativeMM?nativeMM(Q):null, hooked=[];
+  function saved(){try{var v=localStorage.getItem(KEY);return v==='light'||v==='dark'?v:null}catch(e){return null}}
+  function effective(){return saved()||(sys&&sys.matches?'dark':'light')}
+  function apply(){root.setAttribute('data-theme',effective());root.style.colorScheme=effective()}
+  apply();
+  // Pages listen for OS colour-scheme changes to redraw their canvases; make those
+  // listeners (and .matches checks) follow the chosen theme instead of the OS alone.
+  if(nativeMM){
+    window.matchMedia=function(q){
+      var m=nativeMM(q);
+      if(!/prefers-color-scheme/.test(String(q)))return m;
+      var wantDark=/dark/.test(String(q));
+      try{Object.defineProperty(m,'matches',{configurable:true,get:function(){return (effective()==='dark')===wantDark}})}catch(e){}
+      var add=m.addEventListener, addL=m.addListener;
+      m.addEventListener=function(t,f,o){if(t==='change')hooked.push({m:m,f:f,d:wantDark});return add.call(m,t,f,o)};
+      if(addL)m.addListener=function(f){hooked.push({m:m,f:f,d:wantDark});return addL.call(m,f)};
+      return m;
+    };
+  }
+  function notify(){
+    hooked.forEach(function(h){
+      var ev={matches:(effective()==='dark')===h.d,media:h.m.media,type:'change'};
+      try{typeof h.f==='function'?h.f.call(h.m,ev):h.f&&h.f.handleEvent&&h.f.handleEvent(ev)}catch(e){console.error(e)}
+    });
+    window.dispatchEvent(new CustomEvent('themechange',{detail:{theme:effective()}}));
+  }
+  if(sys){var onSys=function(){if(!saved())apply()};sys.addEventListener?sys.addEventListener('change',onSys):sys.addListener(onSys)}
+  function label(b){var d=effective()==='dark';b.setAttribute('aria-label',d?'Switch to light mode':'Switch to dark mode');b.title=d?'Light mode':'Dark mode'}
+  function mount(){
+    if(document.getElementById('theme-toggle'))return;
+    var b=document.createElement('button');
+    b.id='theme-toggle';b.type='button';
+    b.innerHTML='<svg class="tt-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg><svg class="tt-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 14.6A8.3 8.3 0 0 1 9.4 3.8a8.3 8.3 0 1 0 10.8 10.8z"/></svg>';
+    label(b);
+    b.addEventListener('click',function(){
+      var next=effective()==='dark'?'light':'dark';
+      try{localStorage.setItem(KEY,next)}catch(e){}
+      apply();label(b);notify();
+    });
+    document.body.appendChild(b);
+    new MutationObserver(function(){label(b)}).observe(root,{attributes:true,attributeFilter:['data-theme']});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();
+})();
+</script>
+<style>
+#theme-toggle{position:absolute;z-index:2147483000;right:calc(env(safe-area-inset-right,0px) + 12px);top:calc(env(safe-area-inset-top,0px) + 12px);
+  width:38px;height:38px;padding:0;border-radius:50%;display:grid;place-items:center;cursor:pointer;
+  background:rgba(255,255,255,.88);color:#1d2633;border:1px solid rgba(20,30,45,.16);
+  box-shadow:0 2px 10px rgba(10,20,35,.14);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  transition:background-color .2s,color .2s,border-color .2s,transform .15s}
+#theme-toggle:hover{transform:scale(1.06)}
+#theme-toggle:focus-visible{outline:2px solid #3b82f6;outline-offset:2px}
+#theme-toggle svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#theme-toggle .tt-moon{fill:currentColor;stroke:none}
+#theme-toggle .tt-sun{display:none}
+:root[data-theme="dark"] #theme-toggle{background:rgba(22,28,38,.88);color:#e8eef6;border-color:rgba(255,255,255,.16);box-shadow:0 2px 12px rgba(0,0,0,.45)}
+:root[data-theme="dark"] #theme-toggle .tt-sun{display:block}
+:root[data-theme="dark"] #theme-toggle .tt-moon{display:none}
+@media (prefers-reduced-motion:reduce){#theme-toggle{transition:none}#theme-toggle:hover{transform:none}}
+@media (max-width:760px){:root:root{padding-top:calc(env(safe-area-inset-top,0px) + 58px)}}
+@media print{#theme-toggle{display:none}}
+</style>
+<!-- theme-toggle:end -->
+
+
+<style>
+/* theme tokens: dark values are the original palette, light values derived from them */
+:root{--g0:#e5ebf4;--g1:#0a1723;--g2:#b1bdd2;--g3:#0d1721;--g4:#839aba;--g5:#8ca2c3;--g6:#b8c5d6;--g7:#cdddd3;--g8:#107f59;--g9:#ebf1f9;--g10:#c9d3de;--g11:#b9c1cc;--g12:#dbe2ed;--g13:#afbace;--g14:#26445d;--g15:#6685b2;--g16:#d7e0dc;--g17:#5a8777;--g18:#f1ede2;--g19:#ab916d;--g20:#926e14;--g21:#e0e6f1;--g22:#b7c2d0;--g23:#6a829c;--g24:#dbe0ec;--g25:#5d7eb9;--g26:#1b5e93;--g27:#b9c3ce;--g28:#45679e;--g29:#325266;--g30:#f2e4db;--g31:#b07356;--g32:#9e4506;--g33:#edf4ff;--g34:#98adcb;--g35:#1d64b3;--g36:#deebe3;--g37:#3b7761;--g38:#ebecf4;--g39:#a7b0bf;--g40:#596d89;--g41:#819cbc;--g42:#a6b2c1;--g43:#344c66;--g44:#3f725c;--g45:#e3dcd0;--g46:#a27f59;--g47:#e9e5f0;--g48:#6a4bb4;--g49:#a08cd4;--g50:#9e450650;--g51:#1d64b335;--g52:#107f5940;--g53:#acbad0;--g54:#a7182070;--g55:#af2d3518;--g56:#af2d35;--g57:#a45657;--g58:#07864318;--g59:#078643;--g60:#188f52;--g61:#7c99af60;--g62:rgba(158,69,6,.06);--g63:rgba(29,100,179,.04);--g64:rgba(16,94,147,.2);--g65:rgba(7,134,67,.3);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--g0:#060c18;--g1:#b8cce0;--g2:#0f2040;--g3:#ddeeff;--g4:#1e3555;--g5:#1a3050;--g6:#0a1e38;--g7:#001a0c;--g8:#34d399;--g9:#040a14;--g10:#091828;--g11:#142030;--g12:#07101e;--g13:#122240;--g14:#4a7090;--g15:#1e4070;--g16:#071510;--g17:#185040;--g18:#100a00;--g19:#4a3000;--g20:#fbbf24;--g21:#060e1c;--g22:#0f2035;--g23:#2a4560;--g24:#0a1020;--g25:#1e4080;--g26:#5090c8;--g27:#102030;--g28:#2a5090;--g29:#406880;--g30:#1a0800;--g31:#6a2a00;--g32:#f97316;--g33:#00081a;--g34:#00285a;--g35:#60a5fa;--g36:#001208;--g37:#065f46;--g38:#0a0a14;--g39:#1a2840;--g40:#3a5070;--g41:#1a3555;--g42:#162840;--g43:#4a6888;--g44:#206048;--g45:#1a1000;--g46:#5a3500;--g47:#100a18;--g48:#a78bfa;--g49:#3b1f6a;--g50:#f9731650;--g51:#60a5fa35;--g52:#34d39940;--g53:#0d2245;--g54:#ef444470;--g55:#f8717118;--g56:#f87171;--g57:#fca5a5;--g58:#4ade8018;--g59:#4ade80;--g60:#86efac;--g61:#1a3a5060;--g62:rgba(249,115,22,.06);--g63:rgba(96,165,250,.04);--g64:rgba(74,144,200,.2);--g65:rgba(74,222,128,.3);color-scheme:dark}}
+:root[data-theme="dark"]{--g0:#060c18;--g1:#b8cce0;--g2:#0f2040;--g3:#ddeeff;--g4:#1e3555;--g5:#1a3050;--g6:#0a1e38;--g7:#001a0c;--g8:#34d399;--g9:#040a14;--g10:#091828;--g11:#142030;--g12:#07101e;--g13:#122240;--g14:#4a7090;--g15:#1e4070;--g16:#071510;--g17:#185040;--g18:#100a00;--g19:#4a3000;--g20:#fbbf24;--g21:#060e1c;--g22:#0f2035;--g23:#2a4560;--g24:#0a1020;--g25:#1e4080;--g26:#5090c8;--g27:#102030;--g28:#2a5090;--g29:#406880;--g30:#1a0800;--g31:#6a2a00;--g32:#f97316;--g33:#00081a;--g34:#00285a;--g35:#60a5fa;--g36:#001208;--g37:#065f46;--g38:#0a0a14;--g39:#1a2840;--g40:#3a5070;--g41:#1a3555;--g42:#162840;--g43:#4a6888;--g44:#206048;--g45:#1a1000;--g46:#5a3500;--g47:#100a18;--g48:#a78bfa;--g49:#3b1f6a;--g50:#f9731650;--g51:#60a5fa35;--g52:#34d39940;--g53:#0d2245;--g54:#ef444470;--g55:#f8717118;--g56:#f87171;--g57:#fca5a5;--g58:#4ade8018;--g59:#4ade80;--g60:#86efac;--g61:#1a3a5060;--g62:rgba(249,115,22,.06);--g63:rgba(96,165,250,.04);--g64:rgba(74,144,200,.2);--g65:rgba(74,222,128,.3);color-scheme:dark}
+</style>
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GSN Layout Optimization via Simulated Annealing</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#060c18;color:#b8cce0;font-family:'JetBrains Mono',monospace;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-header{padding:9px 18px;border-bottom:1px solid #0f2040;display:flex;align-items:baseline;gap:12px;flex-shrink:0}
-h1{font-size:12px;font-weight:600;letter-spacing:.06em;color:#ddeeff}
-.sub{font-size:9px;color:#1e3555}
+body{background:var(--g0);color:var(--g1);font-family:'JetBrains Mono',monospace;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{padding:9px 18px;border-bottom:1px solid var(--g2);display:flex;align-items:baseline;gap:12px;flex-shrink:0}
+h1{font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--g3)}
+.sub{font-size:9px;color:var(--g4)}
 main{flex:1;display:flex;min-height:0}
 #cv-wrap{flex:1;position:relative;min-width:0;display:flex;flex-direction:column}
 .cv-row{flex:1;display:flex;min-height:0;position:relative}
 canvas.net{display:block;width:100%;height:100%}
 canvas.net.pick-mode{cursor:crosshair}
-.cv-label{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:8px;color:#1a3050;letter-spacing:.06em;pointer-events:none;white-space:nowrap}
+.cv-label{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:8px;color:var(--g5);letter-spacing:.06em;pointer-events:none;white-space:nowrap}
 .cv-dg{position:absolute;top:8px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:600;letter-spacing:.04em;pointer-events:none;white-space:nowrap}
-.divider{height:1px;background:#0a1e38;flex-shrink:0}
-#flash{position:absolute;top:10px;right:10px;background:#001a0c;border:1px solid #34d399;color:#34d399;font-size:9px;padding:3px 9px;border-radius:2px;opacity:0;transition:opacity .4s;pointer-events:none;z-index:10}
-#panel{width:260px;flex-shrink:0;border-left:1px solid #0f2040;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;background:#040a14}
-.sec{padding:10px 13px;border-bottom:1px solid #091828;flex-shrink:0}
-.sh{font-size:7px;font-weight:600;letter-spacing:.2em;color:#142030;margin-bottom:7px;text-transform:uppercase}
-select{font-family:'JetBrains Mono',monospace;font-size:9px;background:#07101e;border:1px solid #122240;color:#4a7090;padding:4px 7px;border-radius:2px;width:100%;cursor:pointer;margin-bottom:4px}
-select:focus{outline:none;border-color:#1e4070}
+.divider{height:1px;background:var(--g6);flex-shrink:0}
+#flash{position:absolute;top:10px;right:10px;background:var(--g7);border:1px solid var(--g8);color:var(--g8);font-size:9px;padding:3px 9px;border-radius:2px;opacity:0;transition:opacity .4s;pointer-events:none;z-index:10}
+#panel{width:260px;flex-shrink:0;border-left:1px solid var(--g2);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;background:var(--g9)}
+.sec{padding:10px 13px;border-bottom:1px solid var(--g10);flex-shrink:0}
+.sh{font-size:7px;font-weight:600;letter-spacing:.2em;color:var(--g11);margin-bottom:7px;text-transform:uppercase}
+select{font-family:'JetBrains Mono',monospace;font-size:9px;background:var(--g12);border:1px solid var(--g13);color:var(--g14);padding:4px 7px;border-radius:2px;width:100%;cursor:pointer;margin-bottom:4px}
+select:focus{outline:none;border-color:var(--g15)}
 button{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;padding:5px 7px;border-radius:2px;border:1px solid;cursor:pointer;transition:all .1s;display:flex;align-items:center;gap:5px;white-space:nowrap}
 button:disabled{opacity:.2;cursor:default}
 button:not(:disabled):hover{opacity:.72}
-.b-run{background:#071510;border-color:#185040;color:#34d399}
-.b-gsn{background:#100a00;border-color:#4a3000;color:#fbbf24}
-.b-neu{background:#060e1c;border-color:#0f2035;color:#2a4560}
-.b-pick{background:#0a1020;border-color:#1e4080;color:#5090c8}
+.b-run{background:var(--g16);border-color:var(--g17);color:var(--g8)}
+.b-gsn{background:var(--g18);border-color:var(--g19);color:var(--g20)}
+.b-neu{background:var(--g21);border-color:var(--g22);color:var(--g23)}
+.b-pick{background:var(--g24);border-color:var(--g25);color:var(--g26)}
 .br{display:flex;gap:4px;margin-top:5px}
 .br button{flex:1;justify-content:center}
 .sl{display:flex;align-items:center;gap:7px;margin-top:5px}
-.sl span{font-size:8px;color:#102030;flex-shrink:0}
-input[type=range]{flex:1;accent-color:#2a5090;height:2px;cursor:pointer}
+.sl span{font-size:8px;color:var(--g27);flex-shrink:0}
+input[type=range]{flex:1;accent-color:var(--g28);height:2px;cursor:pointer}
 .sg{display:grid;grid-template-columns:1fr auto;row-gap:3px;font-size:9px}
-.sg .l{color:#1a3050}.sg .v{text-align:right;color:#406880;font-weight:500}
-.sg .va{color:#34d399}.sg .sep{grid-column:1/-1;height:1px;background:#091828;margin:2px 0}
+.sg .l{color:var(--g5)}.sg .v{text-align:right;color:var(--g29);font-weight:500}
+.sg .va{color:var(--g8)}.sg .sep{grid-column:1/-1;height:1px;background:var(--g10);margin:2px 0}
 .pb{display:inline-block;padding:2px 7px;border-radius:2px;font-size:8px;font-weight:600;letter-spacing:.08em}
-.ph{background:#1a0800;border:1px solid #6a2a00;color:#f97316}
-.pq{background:#00081a;border:1px solid #00285a;color:#60a5fa}
-.pd{background:#001208;border:1px solid #065f46;color:#34d399}
-.pi{background:#0a0a14;border:1px solid #1a2840;color:#3a5070}
-#chart-sec{padding:10px 13px 7px;display:flex;flex-direction:column;border-bottom:1px solid #091828;flex-shrink:0}
+.ph{background:var(--g30);border:1px solid var(--g31);color:var(--g32)}
+.pq{background:var(--g33);border:1px solid var(--g34);color:var(--g35)}
+.pd{background:var(--g36);border:1px solid var(--g37);color:var(--g8)}
+.pi{background:var(--g38);border:1px solid var(--g39);color:var(--g40)}
+#chart-sec{padding:10px 13px 7px;display:flex;flex-direction:column;border-bottom:1px solid var(--g10);flex-shrink:0}
 #chart{width:100%;height:90px;display:block}
-.cleg{font-size:7px;color:#1a3050;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap}
+.cleg{font-size:7px;color:var(--g5);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap}
 .gsn-tag{display:inline-block;padding:1px 5px;border-radius:2px;font-size:7px;font-weight:600}
-#status{padding:5px 13px;border-top:1px solid #091828;font-size:8px;color:#1a3555;flex-shrink:0;min-height:22px}
+#status{padding:5px 13px;border-top:1px solid var(--g10);font-size:8px;color:var(--g41);flex-shrink:0;min-height:22px}
+</style>
+<style id="theme-toggle-fit">
+/* fit the theme toggle into this page's header bar */
+#theme-toggle{top:calc(env(safe-area-inset-top,0px) + 3px);right:calc(env(safe-area-inset-right,0px) + 8px);width:26px;height:26px;box-shadow:none}
+#theme-toggle svg{width:14px;height:14px}
+header{padding-right:46px !important}
+@media (max-width:760px){:root:root{padding-top:env(safe-area-inset-top,0px)}}
 </style>
 </head>
 <body>
 <header>
   <h1>Layout Optimization for Greedy Navigation</h1>
   <span class="sub">Lee &amp; Holme · PRE 86, 067103 (2012) — Simulated Annealing</span>
-  <span class="sub" style="margin-left:auto;color:#162840">Demo by Claude Sonnet 4.6</span>
+  <span class="sub" style="margin-left:auto;color:var(--g42)">Demo by Claude Sonnet 4.6</span>
 </header>
 <main>
 <div id="cv-wrap">
   <div class="cv-row" id="top-row">
     <canvas class="net" id="nc-top"></canvas>
     <div class="cv-label" id="lbl-top">current layout (optimizing…)</div>
-    <div class="cv-dg" id="dg-top" style="color:#34d399">—</div>
+    <div class="cv-dg" id="dg-top" style="color:var(--g8)">—</div>
     <div id="flash">★ new best</div>
   </div>
   <div class="divider"></div>
   <div class="cv-row" id="bot-row">
     <canvas class="net" id="nc-bot"></canvas>
     <div class="cv-label">initial random layout</div>
-    <div class="cv-dg" id="dg-bot" style="color:#4a6888">—</div>
+    <div class="cv-dg" id="dg-bot" style="color:var(--g43)">—</div>
   </div>
 </div>
 
@@ -84,7 +169,7 @@ input[type=range]{flex:1;accent-color:#2a5090;height:2px;cursor:pointer}
       <option value="grid">2D Grid (N=25, 5×5)</option>
       <option value="karate">Karate Club (N=34)</option>
     </select>
-    <div id="ginfo" style="font-size:8px;color:#1a3050">—</div>
+    <div id="ginfo" style="font-size:8px;color:var(--g5)">—</div>
   </div>
 
   <div class="sec">
@@ -103,12 +188,12 @@ input[type=range]{flex:1;accent-color:#2a5090;height:2px;cursor:pointer}
     <div class="sh">SA Progress</div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
       <span id="pbadge" class="pb pi">READY</span>
-      <span style="font-size:8px;color:#162840">session <span id="ssess">0</span>/6</span>
+      <span style="font-size:8px;color:var(--g42)">session <span id="ssess">0</span>/6</span>
     </div>
     <div class="sg">
       <span class="l">MC step</span><span class="v" id="smc">0</span>
       <div class="sep"></div>
-      <span class="l" style="color:#206048">d (BFS shortest path)</span><span class="v va" id="sd">—</span>
+      <span class="l" style="color:var(--g44)">d (BFS shortest path)</span><span class="v va" id="sd">—</span>
       <span class="l">d_g initial</span><span class="v" id="sdinit">—</span>
       <span class="l">d_g current</span><span class="v" id="sdg">—</span>
       <span class="l">d_g best</span><span class="v va" id="sdbest">—</span>
@@ -135,7 +220,7 @@ input[type=range]{flex:1;accent-color:#2a5090;height:2px;cursor:pointer}
   <!-- GSN Test section -->
   <div class="sec">
     <div class="sh">Test GSN — Before / After</div>
-    <div style="font-size:8px;color:#1a3050;margin-bottom:6px;line-height:1.6">
+    <div style="font-size:8px;color:var(--g5);margin-bottom:6px;line-height:1.6">
       Pick S and T on either canvas, then run GSN simultaneously on both layouts to compare navigability.
     </div>
     <div class="br" style="margin-top:0">
@@ -154,10 +239,10 @@ input[type=range]{flex:1;accent-color:#2a5090;height:2px;cursor:pointer}
       <span>fast</span>
     </div>
     <div class="sg" style="margin-top:8px">
-      <span class="l"><span class="gsn-tag" style="background:#1a1000;color:#fbbf24;border:1px solid #5a3500">top</span> steps</span>
-      <span class="v" id="gs-top" style="color:#fbbf24">—</span>
-      <span class="l"><span class="gsn-tag" style="background:#100a18;color:#a78bfa;border:1px solid #3b1f6a">bot</span> steps</span>
-      <span class="v" id="gs-bot" style="color:#a78bfa">—</span>
+      <span class="l"><span class="gsn-tag" style="background:var(--g45);color:var(--g20);border:1px solid var(--g46)">top</span> steps</span>
+      <span class="v" id="gs-top" style="color:var(--g20)">—</span>
+      <span class="l"><span class="gsn-tag" style="background:var(--g47);color:var(--g48);border:1px solid var(--g49)">bot</span> steps</span>
+      <span class="v" id="gs-bot" style="color:var(--g48)">—</span>
       <span class="l" style="padding-left:8px">backtracks — top</span><span class="v" id="gs-bkt">—</span>
       <span class="l" style="padding-left:8px">backtracks — bot</span><span class="v" id="gs-bki">—</span>
       <div class="sep"></div>
@@ -169,10 +254,10 @@ input[type=range]{flex:1;accent-color:#2a5090;height:2px;cursor:pointer}
     <div class="sh">d_g history</div>
     <canvas id="chart"></canvas>
     <div class="cleg">
-      <span><span style="color:#f9731650">█</span> heating</span>
-      <span><span style="color:#60a5fa35">█</span> quenching</span>
-      <span><span style="color:#34d399">—</span> best d_g</span>
-      <span><span style="color:#34d39940">··</span> d (BFS)</span>
+      <span><span style="color:var(--g50)">█</span> heating</span>
+      <span><span style="color:var(--g51)">█</span> quenching</span>
+      <span><span style="color:var(--g8)">—</span> best d_g</span>
+      <span><span style="color:var(--g52)">··</span> d (BFS)</span>
     </div>
   </div>
 
@@ -181,6 +266,9 @@ input[type=range]{flex:1;accent-color:#2a5090;height:2px;cursor:pointer}
 </main>
 
 <script>
+var K={dark:true};function readK(){var cs=getComputedStyle(document.documentElement);K.dark=document.documentElement.getAttribute('data-theme')==='dark';for(var i=0;i<66;i++)K['g'+i]=cs.getPropertyValue('--g'+i).trim();}readK();
+new MutationObserver(function(){readK();try{drawAll();drawChart()}catch(e){console.error(e)}}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
 // ── Canvases ──────────────────────────────────────────────────────
 const TC=document.getElementById('nc-top'), BC=document.getElementById('nc-bot');
 const Tctx=TC.getContext('2d'), Bctx=BC.getContext('2d');
@@ -358,17 +446,17 @@ function normalizePos(dp,W,H){
 
 function drawGraph(ctx,canvas,dp,dimmed){
   const W=canvas.width,H=canvas.height;
-  ctx.clearRect(0,0,W,H);ctx.fillStyle='#060c18';ctx.fillRect(0,0,W,H);
+  ctx.clearRect(0,0,W,H);ctx.fillStyle=K.g0;ctx.fillRect(0,0,W,H);
   if(!G||!dp.length)return;
   const cp=normalizePos(dp,W,H),maxDeg=Math.max(...G.adj.map(a=>a.length),1);
-  ctx.strokeStyle=dimmed?'#091828':'#0d2245';ctx.lineWidth=dimmed?0.8:1.1;
+  ctx.strokeStyle=dimmed?K.g10:K.g53;ctx.lineWidth=dimmed?0.8:1.1;
   ctx.beginPath();for(const[a,b]of G.edges){ctx.moveTo(cp[a].x,cp[a].y);ctx.lineTo(cp[b].x,cp[b].y);}ctx.stroke();
   for(let i=0;i<G.N;i++){
     const t=G.adj[i].length/maxDeg,r=dimmed?2+t*4:3+t*5.5;
-    const hue=dimmed?210:200-t*168,sat=dimmed?15+t*20:22+t*58,lit=dimmed?12+t*18:16+t*44;
+    const hue=dimmed?210:200-t*168,sat=dimmed?15+t*20:22+t*58,lit=dimmed?(K.dark?12+t*18:90-t*10):(K.dark?16+t*44:84-t*40);
     ctx.beginPath();ctx.arc(cp[i].x,cp[i].y,r,0,Math.PI*2);
     ctx.fillStyle=`hsl(${hue},${sat}%,${lit}%)`;ctx.fill();
-    ctx.strokeStyle=`hsl(${hue},${sat}%,${lit+10}%)`;ctx.lineWidth=0.5;ctx.stroke();
+    ctx.strokeStyle=`hsl(${hue},${sat}%,${lit+(K.dark?10:-12)}%)`;ctx.lineWidth=0.5;ctx.stroke();
   }
 }
 
@@ -396,7 +484,7 @@ function drawGSNOverlay(ctx,canvas,dp,path,color){
     ctx.stroke();ctx.globalAlpha=1;
 
     // Backtrack edges (dashed red, individual strokes)
-    ctx.lineWidth=1;ctx.strokeStyle='#ef444470';ctx.setLineDash([4,4]);
+    ctx.lineWidth=1;ctx.strokeStyle=K.g54;ctx.setLineDash([4,4]);
     for(const[ea,eb]of G.edges){const k=Math.min(ea,eb)+'_'+Math.max(ea,eb);if(edgeSt.get(k)==='bt'){ctx.beginPath();ctx.moveTo(cp[ea].x,cp[ea].y);ctx.lineTo(cp[eb].x,cp[eb].y);ctx.stroke();}}
     ctx.setLineDash([]);
 
@@ -426,19 +514,19 @@ function drawGSNOverlay(ctx,canvas,dp,path,color){
 
   // S node — glow + red fill + label
   {const v=cp[gsnSrc];
-  ctx.beginPath();ctx.arc(v.x,v.y,nr+5,0,Math.PI*2);ctx.fillStyle='#f8717118';ctx.fill();
+  ctx.beginPath();ctx.arc(v.x,v.y,nr+5,0,Math.PI*2);ctx.fillStyle=K.g55;ctx.fill();
   ctx.beginPath();ctx.arc(v.x,v.y,nr+2,0,Math.PI*2);
-  ctx.fillStyle='#f87171';ctx.strokeStyle='#fca5a5';ctx.lineWidth=1.5;ctx.fill();ctx.stroke();
-  ctx.font=`700 8px 'JetBrains Mono',monospace`;ctx.fillStyle='#060c18';
+  ctx.fillStyle=K.g56;ctx.strokeStyle=K.g57;ctx.lineWidth=1.5;ctx.fill();ctx.stroke();
+  ctx.font=`700 8px 'JetBrains Mono',monospace`;ctx.fillStyle=K.g0;
   ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('S',v.x,v.y);}
 
   // T node — glow + green fill + label
   if(gsnTgt!==null){
     const v=cp[gsnTgt];
-    ctx.beginPath();ctx.arc(v.x,v.y,nr+5,0,Math.PI*2);ctx.fillStyle='#4ade8018';ctx.fill();
+    ctx.beginPath();ctx.arc(v.x,v.y,nr+5,0,Math.PI*2);ctx.fillStyle=K.g58;ctx.fill();
     ctx.beginPath();ctx.arc(v.x,v.y,nr+2,0,Math.PI*2);
-    ctx.fillStyle='#4ade80';ctx.strokeStyle='#86efac';ctx.lineWidth=1.5;ctx.fill();ctx.stroke();
-    ctx.font=`700 8px 'JetBrains Mono',monospace`;ctx.fillStyle='#060c18';
+    ctx.fillStyle=K.g59;ctx.strokeStyle=K.g60;ctx.lineWidth=1.5;ctx.fill();ctx.stroke();
+    ctx.font=`700 8px 'JetBrains Mono',monospace`;ctx.fillStyle=K.g0;
     ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('T',v.x,v.y);
   }
 }
@@ -468,7 +556,7 @@ function drawGSNAngleViz(ctx,cp,dp,nodeIdx,color){
     const isMin=G.adj[nodeIdx].every(nn=>nn===n||angTo(dp[nodeIdx],dp[gsnTgt],dp[nn])>=angle);
     ctx.beginPath();ctx.moveTo(pos.x,pos.y);
     ctx.lineTo(pos.x+jx/jMag*18,pos.y+jy/jMag*18);
-    ctx.strokeStyle=isMin?color+'aa':'#1a3a5060';
+    ctx.strokeStyle=isMin?color+'aa':K.g61;
     ctx.lineWidth=isMin?1.2:.6;ctx.stroke();
   }
 }
@@ -477,8 +565,8 @@ function drawAll(){
   drawGraph(Tctx,TC,pos,false);
   drawGraph(Bctx,BC,initPos,true);
   if(gsnSrc!==null){
-    drawGSNOverlay(Tctx,TC,pos,gsnPathTop,'#fbbf24');
-    drawGSNOverlay(Bctx,BC,initPos,gsnPathBot,'#a78bfa');
+    drawGSNOverlay(Tctx,TC,pos,gsnPathTop,K.g20);
+    drawGSNOverlay(Bctx,BC,initPos,gsnPathBot,K.g48);
   }
   document.getElementById('dg-top').textContent=dg<Infinity?`d_g = ${dg.toFixed(2)} (best: ${dgBest.toFixed(2)})`:'d_g = —';
   document.getElementById('dg-bot').textContent=dgInit<Infinity?`d_g = ${dgInit.toFixed(2)} (initial)`:'d_g = —';
@@ -489,7 +577,7 @@ function drawAll(){
 function drawChart(){
   const W=CC.offsetWidth,H=CC.offsetHeight;if(!W||!H)return;
   CC.width=W;CC.height=H;const ctx=Cctx;
-  ctx.fillStyle='#040a14';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=K.g9;ctx.fillRect(0,0,W,H);
   if(history.length<2)return;
   const pad={t:4,b:4,l:2,r:2},iW=W-pad.l-pad.r,iH=H-pad.t-pad.b;
   const vals=history.map(h=>h.dg).filter(v=>v<Infinity);if(!vals.length)return;
@@ -497,14 +585,14 @@ function drawChart(){
   const scX=iW/Math.max(history.length-1,1),scY=iH/((yMax-yMin)||1);
   const px=i=>pad.l+i*scX,py=v=>H-pad.b-(v-yMin)*scY;
   let ps=0,pc=history[0]?.phase;
-  for(let i=1;i<=history.length;i++){const ph=i<history.length?history[i].phase:null;if(ph!==pc||i===history.length){ctx.fillStyle=pc==='heating'?'rgba(249,115,22,.06)':'rgba(96,165,250,.04)';ctx.fillRect(px(ps),pad.t,px(i)-px(ps),iH);ps=i;pc=ph;}}
-  if(dgInit<Infinity){ctx.strokeStyle='rgba(74,144,200,.2)';ctx.lineWidth=1;ctx.setLineDash([3,5]);ctx.beginPath();ctx.moveTo(pad.l,py(dgInit));ctx.lineTo(W-pad.r,py(dgInit));ctx.stroke();ctx.setLineDash([]);}
-  if(dShort<Infinity){ctx.strokeStyle='rgba(74,222,128,.3)';ctx.lineWidth=1;ctx.setLineDash([2,4]);ctx.beginPath();ctx.moveTo(pad.l,py(dShort));ctx.lineTo(W-pad.r,py(dShort));ctx.stroke();ctx.setLineDash([]);}
-  ctx.strokeStyle='#34d399';ctx.lineWidth=1.5;ctx.beginPath();let first=true;
+  for(let i=1;i<=history.length;i++){const ph=i<history.length?history[i].phase:null;if(ph!==pc||i===history.length){ctx.fillStyle=pc==='heating'?K.g62:K.g63;ctx.fillRect(px(ps),pad.t,px(i)-px(ps),iH);ps=i;pc=ph;}}
+  if(dgInit<Infinity){ctx.strokeStyle=K.g64;ctx.lineWidth=1;ctx.setLineDash([3,5]);ctx.beginPath();ctx.moveTo(pad.l,py(dgInit));ctx.lineTo(W-pad.r,py(dgInit));ctx.stroke();ctx.setLineDash([]);}
+  if(dShort<Infinity){ctx.strokeStyle=K.g65;ctx.lineWidth=1;ctx.setLineDash([2,4]);ctx.beginPath();ctx.moveTo(pad.l,py(dShort));ctx.lineTo(W-pad.r,py(dShort));ctx.stroke();ctx.setLineDash([]);}
+  ctx.strokeStyle=K.g8;ctx.lineWidth=1.5;ctx.beginPath();let first=true;
   for(let i=0;i<history.length;i++){if(history[i].dg>=Infinity)continue;if(first){ctx.moveTo(px(i),py(history[i].dg));first=false;}else ctx.lineTo(px(i),py(history[i].dg));}
   ctx.stroke();
   const last=history[history.length-1];
-  if(last&&last.dg<Infinity){ctx.beginPath();ctx.arc(px(history.length-1),py(last.dg),2.5,0,Math.PI*2);ctx.fillStyle='#34d399';ctx.fill();}
+  if(last&&last.dg<Infinity){ctx.beginPath();ctx.arc(px(history.length-1),py(last.dg),2.5,0,Math.PI*2);ctx.fillStyle=K.g8;ctx.fill();}
 }
 
 // ── UI helpers ────────────────────────────────────────────────────

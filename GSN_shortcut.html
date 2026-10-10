@@ -2,96 +2,181 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<!-- theme-toggle:start -->
+<script>
+(function(){
+  var KEY='lshlj82-demo-theme', root=document.documentElement, Q='(prefers-color-scheme: dark)';
+  var nativeMM=window.matchMedia?window.matchMedia.bind(window):null;
+  var sys=nativeMM?nativeMM(Q):null, hooked=[];
+  function saved(){try{var v=localStorage.getItem(KEY);return v==='light'||v==='dark'?v:null}catch(e){return null}}
+  function effective(){return saved()||(sys&&sys.matches?'dark':'light')}
+  function apply(){root.setAttribute('data-theme',effective());root.style.colorScheme=effective()}
+  apply();
+  // Pages listen for OS colour-scheme changes to redraw their canvases; make those
+  // listeners (and .matches checks) follow the chosen theme instead of the OS alone.
+  if(nativeMM){
+    window.matchMedia=function(q){
+      var m=nativeMM(q);
+      if(!/prefers-color-scheme/.test(String(q)))return m;
+      var wantDark=/dark/.test(String(q));
+      try{Object.defineProperty(m,'matches',{configurable:true,get:function(){return (effective()==='dark')===wantDark}})}catch(e){}
+      var add=m.addEventListener, addL=m.addListener;
+      m.addEventListener=function(t,f,o){if(t==='change')hooked.push({m:m,f:f,d:wantDark});return add.call(m,t,f,o)};
+      if(addL)m.addListener=function(f){hooked.push({m:m,f:f,d:wantDark});return addL.call(m,f)};
+      return m;
+    };
+  }
+  function notify(){
+    hooked.forEach(function(h){
+      var ev={matches:(effective()==='dark')===h.d,media:h.m.media,type:'change'};
+      try{typeof h.f==='function'?h.f.call(h.m,ev):h.f&&h.f.handleEvent&&h.f.handleEvent(ev)}catch(e){console.error(e)}
+    });
+    window.dispatchEvent(new CustomEvent('themechange',{detail:{theme:effective()}}));
+  }
+  if(sys){var onSys=function(){if(!saved())apply()};sys.addEventListener?sys.addEventListener('change',onSys):sys.addListener(onSys)}
+  function label(b){var d=effective()==='dark';b.setAttribute('aria-label',d?'Switch to light mode':'Switch to dark mode');b.title=d?'Light mode':'Dark mode'}
+  function mount(){
+    if(document.getElementById('theme-toggle'))return;
+    var b=document.createElement('button');
+    b.id='theme-toggle';b.type='button';
+    b.innerHTML='<svg class="tt-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg><svg class="tt-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 14.6A8.3 8.3 0 0 1 9.4 3.8a8.3 8.3 0 1 0 10.8 10.8z"/></svg>';
+    label(b);
+    b.addEventListener('click',function(){
+      var next=effective()==='dark'?'light':'dark';
+      try{localStorage.setItem(KEY,next)}catch(e){}
+      apply();label(b);notify();
+    });
+    document.body.appendChild(b);
+    new MutationObserver(function(){label(b)}).observe(root,{attributes:true,attributeFilter:['data-theme']});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();
+})();
+</script>
+<style>
+#theme-toggle{position:absolute;z-index:2147483000;right:calc(env(safe-area-inset-right,0px) + 12px);top:calc(env(safe-area-inset-top,0px) + 12px);
+  width:38px;height:38px;padding:0;border-radius:50%;display:grid;place-items:center;cursor:pointer;
+  background:rgba(255,255,255,.88);color:#1d2633;border:1px solid rgba(20,30,45,.16);
+  box-shadow:0 2px 10px rgba(10,20,35,.14);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  transition:background-color .2s,color .2s,border-color .2s,transform .15s}
+#theme-toggle:hover{transform:scale(1.06)}
+#theme-toggle:focus-visible{outline:2px solid #3b82f6;outline-offset:2px}
+#theme-toggle svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#theme-toggle .tt-moon{fill:currentColor;stroke:none}
+#theme-toggle .tt-sun{display:none}
+:root[data-theme="dark"] #theme-toggle{background:rgba(22,28,38,.88);color:#e8eef6;border-color:rgba(255,255,255,.16);box-shadow:0 2px 12px rgba(0,0,0,.45)}
+:root[data-theme="dark"] #theme-toggle .tt-sun{display:block}
+:root[data-theme="dark"] #theme-toggle .tt-moon{display:none}
+@media (prefers-reduced-motion:reduce){#theme-toggle{transition:none}#theme-toggle:hover{transform:none}}
+@media (max-width:760px){:root:root{padding-top:calc(env(safe-area-inset-top,0px) + 58px)}}
+@media print{#theme-toggle{display:none}}
+</style>
+<!-- theme-toggle:end -->
+
+
+<style>
+/* theme tokens: dark values are the original palette, light values derived from them */
+:root{--g0:#e5ebf4;--g1:#0a1723;--g2:#b1bdd2;--g3:#0d1721;--g4:#839aba;--g5:#907409;--g6:#e4e4d680;--g7:#90740940;--g8:#ebf1f9;--g9:#c9d3de;--g10:#b9c1cc;--g11:#8198b0;--g12:#002031;--g13:#45679e;--g14:#b2becd;--g15:#7187a5;--g16:#b1bed3;--g17:#406aa2;--g18:#1d64b3;--g19:#d7e0dc;--g20:#5a8777;--g21:#107f59;--g22:#e0e6f1;--g23:#b7c2d0;--g24:#6a829c;--g25:#dbdeea;--g26:#859aca;--g27:#285784;--g28:#f0e9ea;--g29:#965d37;--g30:#926e14;--g31:#e4f0ea;--g32:#568a7a;--g33:#8ca2c3;--g34:#325266;--g35:#dee4ee;--g36:#bac4d4;--g37:#819cbc;--g38:#a6b2c1;--g39:#9e4506;--g40:#9e450640;--g41:#ccd5e2;--g42:rgba(158,69,6,.3);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--g0:#060c18;--g1:#b8cce0;--g2:#0f2040;--g3:#ddeeff;--g4:#1e3555;--g5:#facc15;--g6:#12100080;--g7:#facc1540;--g8:#040a14;--g9:#091828;--g10:#142030;--g11:#203850;--g12:#5090b8;--g13:#2a5090;--g14:#0f2238;--g15:#2a4060;--g16:#0d2040;--g17:#1e5090;--g18:#60a5fa;--g19:#071510;--g20:#185040;--g21:#34d399;--g22:#060e1c;--g23:#0f2035;--g24:#2a4560;--g25:#0d1020;--g26:#1e3060;--g27:#5080b0;--g28:#12090a;--g29:#7a3a00;--g30:#fbbf24;--g31:#010f08;--g32:#065040;--g33:#1a3050;--g34:#406880;--g35:#070f1c;--g36:#0f1e35;--g37:#1a3555;--g38:#162840;--g39:#f97316;--g40:#f9731640;--g41:#0a1628;--g42:rgba(249,115,22,.3);color-scheme:dark}}
+:root[data-theme="dark"]{--g0:#060c18;--g1:#b8cce0;--g2:#0f2040;--g3:#ddeeff;--g4:#1e3555;--g5:#facc15;--g6:#12100080;--g7:#facc1540;--g8:#040a14;--g9:#091828;--g10:#142030;--g11:#203850;--g12:#5090b8;--g13:#2a5090;--g14:#0f2238;--g15:#2a4060;--g16:#0d2040;--g17:#1e5090;--g18:#60a5fa;--g19:#071510;--g20:#185040;--g21:#34d399;--g22:#060e1c;--g23:#0f2035;--g24:#2a4560;--g25:#0d1020;--g26:#1e3060;--g27:#5080b0;--g28:#12090a;--g29:#7a3a00;--g30:#fbbf24;--g31:#010f08;--g32:#065040;--g33:#1a3050;--g34:#406880;--g35:#070f1c;--g36:#0f1e35;--g37:#1a3555;--g38:#162840;--g39:#f97316;--g40:#f9731640;--g41:#0a1628;--g42:rgba(249,115,22,.3);color-scheme:dark}
+</style>
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Navigable City Plan Construction</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#060c18;color:#b8cce0;font-family:'JetBrains Mono',monospace;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-header{padding:9px 18px;border-bottom:1px solid #0f2040;display:flex;align-items:baseline;gap:12px;flex-shrink:0}
-h1{font-size:12px;font-weight:600;letter-spacing:.06em;color:#ddeeff}
-.sub{font-size:9px;color:#1e3555}
+body{background:var(--g0);color:var(--g1);font-family:'JetBrains Mono',monospace;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{padding:9px 18px;border-bottom:1px solid var(--g2);display:flex;align-items:baseline;gap:12px;flex-shrink:0}
+h1{font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--g3)}
+.sub{font-size:9px;color:var(--g4)}
 main{flex:1;display:flex;min-height:0}
 #cv-wrap{flex:1;position:relative;min-width:0}
 #net{display:block;width:100%;height:100%}
 /* Flash overlay */
-#flash{position:absolute;top:10px;left:10px;font-size:9px;color:#facc15;background:#12100080;padding:3px 9px;border:1px solid #facc1540;border-radius:2px;opacity:0;transition:opacity .3s;pointer-events:none}
+#flash{position:absolute;top:10px;left:10px;font-size:9px;color:var(--g5);background:var(--g6);padding:3px 9px;border:1px solid var(--g7);border-radius:2px;opacity:0;transition:opacity .3s;pointer-events:none}
 /* Legend */
-#legend{position:absolute;bottom:10px;left:10px;font-size:8px;color:#1e3555;line-height:2;pointer-events:none}
+#legend{position:absolute;bottom:10px;left:10px;font-size:8px;color:var(--g4);line-height:2;pointer-events:none}
 .leg-row{display:flex;align-items:center;gap:6px}
 .leg-dot{width:18px;height:2px;border-radius:1px;flex-shrink:0}
 /* Panel */
-#panel{width:265px;flex-shrink:0;border-left:1px solid #0f2040;display:flex;flex-direction:column;overflow-y:auto;background:#040a14}
-.sec{padding:10px 13px;border-bottom:1px solid #091828;flex-shrink:0}
-.sh{font-size:7px;font-weight:600;letter-spacing:.2em;color:#142030;margin-bottom:7px;text-transform:uppercase}
+#panel{width:265px;flex-shrink:0;border-left:1px solid var(--g2);display:flex;flex-direction:column;overflow-y:auto;background:var(--g8)}
+.sec{padding:10px 13px;border-bottom:1px solid var(--g9);flex-shrink:0}
+.sh{font-size:7px;font-weight:600;letter-spacing:.2em;color:var(--g10);margin-bottom:7px;text-transform:uppercase}
 /* Slider row */
 .sl-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
-.sl-lbl{font-size:9px;color:#203850;flex:1}
-.sl-val{font-size:9px;color:#5090b8;width:28px;text-align:right;flex-shrink:0}
-input[type=range]{flex:1;accent-color:#2a5090;height:2px;cursor:pointer}
+.sl-lbl{font-size:9px;color:var(--g11);flex:1}
+.sl-val{font-size:9px;color:var(--g12);width:28px;text-align:right;flex-shrink:0}
+input[type=range]{flex:1;accent-color:var(--g13);height:2px;cursor:pointer}
 /* Strategy buttons grid */
 .strat-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
 /* Toggle */
-.tog-row{display:flex;align-items:center;justify-content:space-between;font-size:9px;color:#203850;margin-top:6px}
+.tog-row{display:flex;align-items:center;justify-content:space-between;font-size:9px;color:var(--g11);margin-top:6px}
 .tog{position:relative;width:30px;height:16px;flex-shrink:0}
 .tog input{opacity:0;width:0;height:0}
-.tog-sl{position:absolute;inset:0;background:#0f2238;border-radius:8px;border:1px solid #1e3555;cursor:pointer;transition:.2s}
-.tog-sl::before{content:'';position:absolute;height:10px;width:10px;left:2px;top:2px;background:#2a4060;border-radius:50%;transition:.2s}
-.tog input:checked+.tog-sl{background:#0d2040;border-color:#1e5090}
-.tog input:checked+.tog-sl::before{transform:translateX(14px);background:#60a5fa}
+.tog-sl{position:absolute;inset:0;background:var(--g14);border-radius:8px;border:1px solid var(--g4);cursor:pointer;transition:.2s}
+.tog-sl::before{content:'';position:absolute;height:10px;width:10px;left:2px;top:2px;background:var(--g15);border-radius:50%;transition:.2s}
+.tog input:checked+.tog-sl{background:var(--g16);border-color:var(--g17)}
+.tog input:checked+.tog-sl::before{transform:translateX(14px);background:var(--g18)}
 /* Buttons */
 button{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;padding:5px 7px;border-radius:2px;border:1px solid;cursor:pointer;transition:opacity .1s;display:flex;align-items:center;gap:5px;white-space:nowrap}
 button:disabled{opacity:.2;cursor:default}
 button:not(:disabled):hover{opacity:.72}
-.b-run{background:#071510;border-color:#185040;color:#34d399}
-.b-neu{background:#060e1c;border-color:#0f2035;color:#2a4560}
-.b-gen{background:#0d1020;border-color:#1e3060;color:#5080b0}
+.b-run{background:var(--g19);border-color:var(--g20);color:var(--g21)}
+.b-neu{background:var(--g22);border-color:var(--g23);color:var(--g24)}
+.b-gen{background:var(--g25);border-color:var(--g26);color:var(--g27)}
 .br{display:flex;gap:4px;margin-top:5px}
 .br button{flex:1;justify-content:center}
 /* Strategy button states */
-.bst{background:#060e1c;border:1px solid #0f2035;color:#2a4060;font-size:8px;padding:5px 4px;border-radius:2px;cursor:pointer;text-align:center;transition:all .1s;font-family:'JetBrains Mono',monospace;font-weight:600;letter-spacing:.04em}
+.bst{background:var(--g22);border:1px solid var(--g23);color:var(--g15);font-size:8px;padding:5px 4px;border-radius:2px;cursor:pointer;text-align:center;transition:all .1s;font-family:'JetBrains Mono',monospace;font-weight:600;letter-spacing:.04em}
 .bst:hover{opacity:.8}
-.bst.gsn-active{background:#12090a;border-color:#7a3a00;color:#fbbf24}
-.bst.spn-active{background:#010f08;border-color:#065040;color:#34d399}
+.bst.gsn-active{background:var(--g28);border-color:var(--g29);color:var(--g30)}
+.bst.spn-active{background:var(--g31);border-color:var(--g32);color:var(--g21)}
 /* Stats */
 .sg{display:grid;grid-template-columns:1fr auto;row-gap:3px;font-size:9px}
-.sg .l{color:#1a3050}.sg .v{text-align:right;color:#406880;font-weight:500}
-.sg .va{color:#34d399}.sg .sep{grid-column:1/-1;height:1px;background:#091828;margin:2px 0}
+.sg .l{color:var(--g33)}.sg .v{text-align:right;color:var(--g34);font-weight:500}
+.sg .va{color:var(--g21)}.sg .sep{grid-column:1/-1;height:1px;background:var(--g9);margin:2px 0}
 /* Progress bar */
-.pbar-wrap{margin-top:5px;background:#070f1c;border-radius:2px;height:4px;overflow:hidden;border:1px solid #0f1e35}
-.pbar{height:100%;background:linear-gradient(90deg,#1e5090,#60a5fa);border-radius:2px;transition:width .3s;width:0%}
+.pbar-wrap{margin-top:5px;background:var(--g35);border-radius:2px;height:4px;overflow:hidden;border:1px solid var(--g36)}
+.pbar{height:100%;background:linear-gradient(90deg,var(--g17),var(--g18));border-radius:2px;transition:width .3s;width:0%}
 /* Charts */
-.chart-wrap{padding:10px 13px 8px;border-bottom:1px solid #091828;flex-shrink:0}
+.chart-wrap{padding:10px 13px 8px;border-bottom:1px solid var(--g9);flex-shrink:0}
 canvas.chart{width:100%;height:70px;display:block}
-.cleg{font-size:7px;color:#1a3050;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap}
-#status{padding:5px 13px;border-top:1px solid #091828;font-size:8px;color:#1a3555;flex-shrink:0;min-height:22px}
+.cleg{font-size:7px;color:var(--g33);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap}
+#status{padding:5px 13px;border-top:1px solid var(--g9);font-size:8px;color:var(--g37);flex-shrink:0;min-height:22px}
+</style>
+<style id="theme-toggle-fit">
+/* fit the theme toggle into this page's header bar */
+#theme-toggle{top:calc(env(safe-area-inset-top,0px) + 3px);right:calc(env(safe-area-inset-right,0px) + 8px);width:26px;height:26px;box-shadow:none}
+#theme-toggle svg{width:14px;height:14px}
+header{padding-right:46px !important}
+@media (max-width:760px){:root:root{padding-top:env(safe-area-inset-top,0px)}}
 </style>
 </head>
 <body>
 <header>
   <h1>Navigable City Plan Construction</h1>
-  <span class="sub">Lee, S. H. &amp; Holme, P. · EPJST 215, 135 (2013) · <a href="https://doi.org/10.1140/epjst/e2013-01720-8" style="color:#1e3555;text-decoration:none" target="_blank">doi:10.1140/epjst/e2013-01720-8</a></span>
-  <span class="sub" style="margin-left:auto;color:#162840">Demo by Claude Sonnet 4.6</span>
+  <span class="sub">Lee, S. H. &amp; Holme, P. · EPJST 215, 135 (2013) · <a href="https://doi.org/10.1140/epjst/e2013-01720-8" style="color:var(--g4);text-decoration:none" target="_blank">doi:10.1140/epjst/e2013-01720-8</a></span>
+  <span class="sub" style="margin-left:auto;color:var(--g38)">Demo by Claude Sonnet 4.6</span>
 </header>
 <main>
 <div id="cv-wrap">
   <canvas id="net"></canvas>
   <div id="flash"></div>
   <div id="legend">
-    <div class="leg-row"><div class="leg-dot" style="background:#f97316"></div>MST (skeleton)</div>
-    <div class="leg-row"><div class="leg-dot" style="background:#60a5fa"></div>Shortcuts added</div>
-    <div class="leg-row"><div class="leg-dot" style="background:#facc15;height:1px;border-top:1px dashed #facc15"></div>Next shortcut</div>
+    <div class="leg-row"><div class="leg-dot" style="background:var(--g39)"></div>MST (skeleton)</div>
+    <div class="leg-row"><div class="leg-dot" style="background:var(--g18)"></div>Shortcuts added</div>
+    <div class="leg-row"><div class="leg-dot" style="background:var(--g5);height:1px;border-top:1px dashed var(--g5)"></div>Next shortcut</div>
   </div>
 </div>
 
 <div id="panel">
   <div class="sec">
     <div class="sh">Authors</div>
-    <div style="font-size:8px;color:#1a3050;line-height:1.8">
-      <div style="color:#5090b8;margin-bottom:3px">Sang Hoon Lee</div>
+    <div style="font-size:8px;color:var(--g33);line-height:1.8">
+      <div style="color:var(--g12);margin-bottom:3px">Sang Hoon Lee</div>
       <div>IceLab, Dept of Physics, Umeå University</div>
       <div>Oxford Centre for Industrial and Applied Mathematics, University of Oxford</div>
-      <div style="color:#5090b8;margin-top:5px;margin-bottom:3px">Petter Holme</div>
+      <div style="color:var(--g12);margin-top:5px;margin-bottom:3px">Petter Holme</div>
       <div>IceLab, Dept of Physics, Umeå University</div>
       <div>Dept of Energy Science, Sungkyunkwan University</div>
       <div>Dept of Sociology, Stockholm University</div>
@@ -129,7 +214,7 @@ canvas.chart{width:100%;height:70px;display:block}
       <input type="range" id="sl-lmax" min="15" max="60" value="30" step="5" style="flex:1">
       <span class="sl-val" id="v-lmax">3.0×</span>
     </div>
-    <div style="font-size:8px;color:#1a3050" id="lmax-info">Budget: — units total</div>
+    <div style="font-size:8px;color:var(--g33)" id="lmax-info">Budget: — units total</div>
   </div>
 
   <div class="sec">
@@ -157,7 +242,7 @@ canvas.chart{width:100%;height:70px;display:block}
       <span class="l">Total edge length</span><span class="v" id="s-len">—</span>
       <span class="l">Budget</span><span class="v" id="s-bud">—</span>
       <div class="sep"></div>
-      <span class="l" style="color:#f97316">Metric (MST)</span><span class="v" id="s-mst">—</span>
+      <span class="l" style="color:var(--g39)">Metric (MST)</span><span class="v" id="s-mst">—</span>
       <span class="l">Metric (current)</span><span class="v" id="s-cur">—</span>
       <span class="l va">Improvement</span><span class="v va" id="s-imp">—</span>
     </div>
@@ -167,8 +252,8 @@ canvas.chart{width:100%;height:70px;display:block}
     <div class="sh">Metric over shortcuts</div>
     <canvas class="chart" id="chart-metric"></canvas>
     <div class="cleg">
-      <span><span style="color:#34d399">—</span> metric</span>
-      <span><span style="color:#f9731640">——</span> MST baseline</span>
+      <span><span style="color:var(--g21)">—</span> metric</span>
+      <span><span style="color:var(--g40)">——</span> MST baseline</span>
     </div>
   </div>
 
@@ -182,6 +267,9 @@ canvas.chart{width:100%;height:70px;display:block}
 </main>
 
 <script>
+var K={dark:true};function readK(){var cs=getComputedStyle(document.documentElement);K.dark=document.documentElement.getAttribute('data-theme')==='dark';for(var i=0;i<43;i++)K['g'+i]=cs.getPropertyValue('--g'+i).trim();}readK();
+new MutationObserver(function(){readK();try{drawAll();drawCharts()}catch(e){console.error(e)}}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
 // ── Canvas ─────────────────────────────────────────────────────────
 const NC=document.getElementById('net'),Nctx=NC.getContext('2d');
 function resizeNC(){const w=document.getElementById('cv-wrap');NC.width=w.clientWidth;NC.height=w.clientHeight;}
@@ -411,11 +499,11 @@ function stopRunning(){
 // ── Draw network ──────────────────────────────────────────────────
 function drawAll(){
   const W=NC.width,H=NC.height;
-  Nctx.clearRect(0,0,W,H);Nctx.fillStyle='#060c18';Nctx.fillRect(0,0,W,H);
+  Nctx.clearRect(0,0,W,H);Nctx.fillStyle=K.g0;Nctx.fillRect(0,0,W,H);
   if(!verts.length)return;
 
   // Subtle grid
-  Nctx.strokeStyle='#0a1628';Nctx.lineWidth=.5;
+  Nctx.strokeStyle=K.g41;Nctx.lineWidth=.5;
   const gs=Math.min(W,H)/10;
   for(let x=0;x<W;x+=gs){Nctx.beginPath();Nctx.moveTo(x,0);Nctx.lineTo(x,H);Nctx.stroke();}
   for(let y=0;y<H;y+=gs){Nctx.beginPath();Nctx.moveTo(0,y);Nctx.lineTo(W,y);Nctx.stroke();}
@@ -424,7 +512,7 @@ function drawAll(){
   const maxOrder=Math.max(shortcutCount,1);
 
   // MST edges
-  Nctx.strokeStyle='#f97316';Nctx.lineWidth=1.2;Nctx.beginPath();
+  Nctx.strokeStyle=K.g39;Nctx.lineWidth=1.2;Nctx.beginPath();
   for(const{a,b,isMST}of edgeList){if(!isMST)continue;
     const pa=toCanvas(verts[a]),pb=toCanvas(verts[b]);
     Nctx.moveTo(pa.x,pa.y);Nctx.lineTo(pb.x,pb.y);}
@@ -442,7 +530,7 @@ function drawAll(){
   if(highlightEdge){
     const pa=toCanvas(verts[highlightEdge.a]),pb=toCanvas(verts[highlightEdge.b]);
     Nctx.beginPath();Nctx.moveTo(pa.x,pa.y);Nctx.lineTo(pb.x,pb.y);
-    Nctx.strokeStyle='#facc15';Nctx.lineWidth=2;Nctx.setLineDash([6,4]);Nctx.stroke();Nctx.setLineDash([]);
+    Nctx.strokeStyle=K.g5;Nctx.lineWidth=2;Nctx.setLineDash([6,4]);Nctx.stroke();Nctx.setLineDash([]);
     showFlash(`+ shortcut ${shortcutCount+1}`);
   }
 
@@ -451,11 +539,11 @@ function drawAll(){
     const deg=[...adjSet.get(i)].length;
     const t=deg/maxDeg;
     const r=3+t*5;
-    const hue=200-t*168,sat=22+t*58,lit=16+t*44;
+    const hue=200-t*168,sat=22+t*58,lit=(K.dark?16+t*44:84-t*40);
     const cp=toCanvas(verts[i]);
     Nctx.beginPath();Nctx.arc(cp.x,cp.y,r,0,Math.PI*2);
     Nctx.fillStyle=`hsl(${hue},${sat}%,${lit}%)`;Nctx.fill();
-    Nctx.strokeStyle=`hsl(${hue},${sat}%,${lit+10}%)`;Nctx.lineWidth=.5;Nctx.stroke();
+    Nctx.strokeStyle=`hsl(${hue},${sat}%,${lit+(K.dark?10:-12)}%)`;Nctx.lineWidth=.5;Nctx.stroke();
   }
 }
 
@@ -466,23 +554,23 @@ function drawMetricChart(){
   const el=document.getElementById('chart-metric');
   const W=el.offsetWidth,H=el.offsetHeight;if(!W||!H)return;
   el.width=W;el.height=H;const ctx=el.getContext('2d');
-  ctx.fillStyle='#040a14';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=K.g8;ctx.fillRect(0,0,W,H);
   if(metricHistory.length<1)return;
   const pad={t:4,b:4,l:2,r:2},iW=W-pad.l-pad.r,iH=H-pad.t-pad.b;
   const yMin=Math.min(...metricHistory)*0.95,yMax=metricMST*1.05;
   const scX=iW/Math.max(metricHistory.length-1,1),scY=iH/((yMax-yMin)||1);
   const px=i=>pad.l+i*scX,py=v=>H-pad.b-(v-yMin)*scY;
   // MST baseline
-  ctx.strokeStyle='rgba(249,115,22,.3)';ctx.lineWidth=1;ctx.setLineDash([3,4]);
+  ctx.strokeStyle=K.g42;ctx.lineWidth=1;ctx.setLineDash([3,4]);
   ctx.beginPath();ctx.moveTo(pad.l,py(metricMST));ctx.lineTo(W-pad.r,py(metricMST));ctx.stroke();ctx.setLineDash([]);
   // Metric line
-  ctx.strokeStyle='#34d399';ctx.lineWidth=1.5;ctx.beginPath();
+  ctx.strokeStyle=K.g21;ctx.lineWidth=1.5;ctx.beginPath();
   for(let i=0;i<metricHistory.length;i++){
     if(i===0)ctx.moveTo(px(i),py(metricHistory[i]));else ctx.lineTo(px(i),py(metricHistory[i]));
   }ctx.stroke();
   if(metricHistory.length>0){
     ctx.beginPath();ctx.arc(px(metricHistory.length-1),py(metricHistory[metricHistory.length-1]),2.5,0,Math.PI*2);
-    ctx.fillStyle='#34d399';ctx.fill();
+    ctx.fillStyle=K.g21;ctx.fill();
   }
 }
 
@@ -490,7 +578,7 @@ function drawDegChart(){
   const el=document.getElementById('chart-deg');
   const W=el.offsetWidth,H=el.offsetHeight;if(!W||!H)return;
   el.width=W;el.height=H;const ctx=el.getContext('2d');
-  ctx.fillStyle='#040a14';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=K.g8;ctx.fillRect(0,0,W,H);
   if(!verts.length)return;
   // Compute degree distribution
   const deg=Array.from({length:N},(_,i)=>[...adjSet.get(i)].length);
@@ -513,7 +601,7 @@ function drawDegChart(){
     ctx.fillRect(bx,by,barW,bh);
   }
   // Axis labels
-  ctx.font=`7px 'JetBrains Mono',monospace`;ctx.fillStyle='#1a3050';ctx.textAlign='center';
+  ctx.font=`7px 'JetBrains Mono',monospace`;ctx.fillStyle=K.g33;ctx.textAlign='center';
   for(let k=kMin;k<=kMax;k+=Math.ceil(nBars/8)){
     const bx=pad+(k-kMin)*((W-2*pad)/nBars)+barW/2;
     ctx.fillText(k,bx,H-1);

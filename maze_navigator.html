@@ -2,27 +2,105 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<!-- theme-toggle:start -->
+<script>
+(function(){
+  var KEY='lshlj82-demo-theme', root=document.documentElement, Q='(prefers-color-scheme: dark)';
+  var nativeMM=window.matchMedia?window.matchMedia.bind(window):null;
+  var sys=nativeMM?nativeMM(Q):null, hooked=[];
+  function saved(){try{var v=localStorage.getItem(KEY);return v==='light'||v==='dark'?v:null}catch(e){return null}}
+  function effective(){return saved()||(sys&&sys.matches?'dark':'light')}
+  function apply(){root.setAttribute('data-theme',effective());root.style.colorScheme=effective()}
+  apply();
+  // Pages listen for OS colour-scheme changes to redraw their canvases; make those
+  // listeners (and .matches checks) follow the chosen theme instead of the OS alone.
+  if(nativeMM){
+    window.matchMedia=function(q){
+      var m=nativeMM(q);
+      if(!/prefers-color-scheme/.test(String(q)))return m;
+      var wantDark=/dark/.test(String(q));
+      try{Object.defineProperty(m,'matches',{configurable:true,get:function(){return (effective()==='dark')===wantDark}})}catch(e){}
+      var add=m.addEventListener, addL=m.addListener;
+      m.addEventListener=function(t,f,o){if(t==='change')hooked.push({m:m,f:f,d:wantDark});return add.call(m,t,f,o)};
+      if(addL)m.addListener=function(f){hooked.push({m:m,f:f,d:wantDark});return addL.call(m,f)};
+      return m;
+    };
+  }
+  function notify(){
+    hooked.forEach(function(h){
+      var ev={matches:(effective()==='dark')===h.d,media:h.m.media,type:'change'};
+      try{typeof h.f==='function'?h.f.call(h.m,ev):h.f&&h.f.handleEvent&&h.f.handleEvent(ev)}catch(e){console.error(e)}
+    });
+    window.dispatchEvent(new CustomEvent('themechange',{detail:{theme:effective()}}));
+  }
+  if(sys){var onSys=function(){if(!saved())apply()};sys.addEventListener?sys.addEventListener('change',onSys):sys.addListener(onSys)}
+  function label(b){var d=effective()==='dark';b.setAttribute('aria-label',d?'Switch to light mode':'Switch to dark mode');b.title=d?'Light mode':'Dark mode'}
+  function mount(){
+    if(document.getElementById('theme-toggle'))return;
+    var b=document.createElement('button');
+    b.id='theme-toggle';b.type='button';
+    b.innerHTML='<svg class="tt-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg><svg class="tt-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 14.6A8.3 8.3 0 0 1 9.4 3.8a8.3 8.3 0 1 0 10.8 10.8z"/></svg>';
+    label(b);
+    b.addEventListener('click',function(){
+      var next=effective()==='dark'?'light':'dark';
+      try{localStorage.setItem(KEY,next)}catch(e){}
+      apply();label(b);notify();
+    });
+    document.body.appendChild(b);
+    new MutationObserver(function(){label(b)}).observe(root,{attributes:true,attributeFilter:['data-theme']});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();
+})();
+</script>
+<style>
+#theme-toggle{position:absolute;z-index:2147483000;right:calc(env(safe-area-inset-right,0px) + 12px);top:calc(env(safe-area-inset-top,0px) + 12px);
+  width:38px;height:38px;padding:0;border-radius:50%;display:grid;place-items:center;cursor:pointer;
+  background:rgba(255,255,255,.88);color:#1d2633;border:1px solid rgba(20,30,45,.16);
+  box-shadow:0 2px 10px rgba(10,20,35,.14);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  transition:background-color .2s,color .2s,border-color .2s,transform .15s}
+#theme-toggle:hover{transform:scale(1.06)}
+#theme-toggle:focus-visible{outline:2px solid #3b82f6;outline-offset:2px}
+#theme-toggle svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#theme-toggle .tt-moon{fill:currentColor;stroke:none}
+#theme-toggle .tt-sun{display:none}
+:root[data-theme="dark"] #theme-toggle{background:rgba(22,28,38,.88);color:#e8eef6;border-color:rgba(255,255,255,.16);box-shadow:0 2px 12px rgba(0,0,0,.45)}
+:root[data-theme="dark"] #theme-toggle .tt-sun{display:block}
+:root[data-theme="dark"] #theme-toggle .tt-moon{display:none}
+@media (prefers-reduced-motion:reduce){#theme-toggle{transition:none}#theme-toggle:hover{transform:none}}
+@media (max-width:760px){:root:root{padding-top:calc(env(safe-area-inset-top,0px) + 58px)}}
+@media print{#theme-toggle{display:none}}
+</style>
+<!-- theme-toggle:end -->
+
+
+<style>
+/* theme tokens: dark values are the original palette, light values derived from them */
+:root{--g0:#e5ebf4;--g1:#0a1723;--g2:#b1bdd2;--g3:#0d1721;--g4:#1c3f58;--g5:#ebf1f9;--g6:#c9d3de;--g7:#36557d;--g8:#26445d;--g9:#45679e;--g10:#d7e0dc;--g11:#245d43;--g12:#107f59;--g13:#ccd5e2;--g14:#7a94b2;--g15:#1c344c;--g16:#00243c;--g17:#b9c6d6;--g18:#6685b2;--g19:#2f5d91;--g20:#f0e9ea;--g21:#965d37;--g22:#926e14;--g23:#e4f0ea;--g24:#568a7a;--g25:#f2f1fe;--g26:#a398e7;--g27:#6a4bb4;--g28:#cdd5ce;--g29:#1b6538;--g30:#188f52;--g31:#d1d8d2;--g32:#5d8a6b;--g33:#078643;--g34:#325266;--g35:#516980;--g36:#692a2b;--g37:#2d3e56;--g38:#4a647f;--g39:#188f5299;--g40:#7c5a0e;--g41:#07643e;--g42:#5c3a96;--g43:#188f5218;--g44:#af2d35;--g45:#a7182055;--g46:#16161640;--g47:#7c99af40;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--g0:#060c18;--g1:#b8cce0;--g2:#0f2040;--g3:#ddeeff;--g4:#4a7595;--g5:#040a14;--g6:#091828;--g7:#3a6090;--g8:#4a7090;--g9:#2a5090;--g10:#071510;--g11:#2a7050;--g12:#34d399;--g13:#0a1628;--g14:#1e3a58;--g15:#5a7a9a;--g16:#5a8ab0;--g17:#0a1e36;--g18:#1e4070;--g19:#6090c8;--g20:#12090a;--g21:#7a3a00;--g22:#fbbf24;--g23:#010f08;--g24:#065040;--g25:#09051a;--g26:#30186a;--g27:#a78bfa;--g28:#0e1a10;--g29:#4a9060;--g30:#86efac;--g31:#0e1810;--g32:#1a5030;--g33:#4ade80;--g34:#406880;--g35:#3a5570;--g36:#a05050;--g37:#5a7090;--g38:#3a5878;--g39:#86efac99;--g40:#c09030;--g41:#2a9060;--g42:#8060c0;--g43:#86efac18;--g44:#f87171;--g45:#ef444455;--g46:#ffffff40;--g47:#1a3a5040;color-scheme:dark}}
+:root[data-theme="dark"]{--g0:#060c18;--g1:#b8cce0;--g2:#0f2040;--g3:#ddeeff;--g4:#4a7595;--g5:#040a14;--g6:#091828;--g7:#3a6090;--g8:#4a7090;--g9:#2a5090;--g10:#071510;--g11:#2a7050;--g12:#34d399;--g13:#0a1628;--g14:#1e3a58;--g15:#5a7a9a;--g16:#5a8ab0;--g17:#0a1e36;--g18:#1e4070;--g19:#6090c8;--g20:#12090a;--g21:#7a3a00;--g22:#fbbf24;--g23:#010f08;--g24:#065040;--g25:#09051a;--g26:#30186a;--g27:#a78bfa;--g28:#0e1a10;--g29:#4a9060;--g30:#86efac;--g31:#0e1810;--g32:#1a5030;--g33:#4ade80;--g34:#406880;--g35:#3a5570;--g36:#a05050;--g37:#5a7090;--g38:#3a5878;--g39:#86efac99;--g40:#c09030;--g41:#2a9060;--g42:#8060c0;--g43:#86efac18;--g44:#f87171;--g45:#ef444455;--g46:#ffffff40;--g47:#1a3a5040;color-scheme:dark}
+</style>
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Maze Navigator — GSN vs SPN vs Random DFS</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#060c18;color:#b8cce0;font-family:'JetBrains Mono',monospace;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-header{padding:9px 18px;border-bottom:1px solid #0f2040;display:flex;align-items:baseline;gap:12px;flex-shrink:0}
-h1{font-size:12px;font-weight:600;letter-spacing:.06em;color:#ddeeff}
-.sub{font-size:9px;color:#4a7595}
+body{background:var(--g0);color:var(--g1);font-family:'JetBrains Mono',monospace;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{padding:9px 18px;border-bottom:1px solid var(--g2);display:flex;align-items:baseline;gap:12px;flex-shrink:0}
+h1{font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--g3)}
+.sub{font-size:9px;color:var(--g4)}
 main{flex:1;display:flex;min-height:0}
 #cv-wrap{flex:1;position:relative;min-width:0}
 #maze{display:block;width:100%;height:100%}
-#hint{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:9px;color:#4a7595;pointer-events:none;white-space:nowrap}
-#panel{width:268px;flex-shrink:0;border-left:1px solid #0f2040;display:flex;flex-direction:column;overflow-y:auto;background:#040a14}
-.sec{padding:11px 13px;border-bottom:1px solid #091828;flex-shrink:0}
-.sh{font-size:7px;font-weight:600;letter-spacing:.2em;color:#3a6090;margin-bottom:8px;text-transform:uppercase}
+#hint{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--g4);pointer-events:none;white-space:nowrap}
+#panel{width:268px;flex-shrink:0;border-left:1px solid var(--g2);display:flex;flex-direction:column;overflow-y:auto;background:var(--g5)}
+.sec{padding:11px 13px;border-bottom:1px solid var(--g6);flex-shrink:0}
+.sh{font-size:7px;font-weight:600;letter-spacing:.2em;color:var(--g7);margin-bottom:8px;text-transform:uppercase}
 /* Slider rows */
 .sr{display:flex;align-items:center;gap:8px;margin-bottom:5px}
-.sl{font-size:9px;color:#4a7090;flex:1}
-.sv{font-size:9px;color:#4a7090;width:26px;text-align:right;flex-shrink:0}
-input[type=range]{flex:1;accent-color:#2a5090;height:2px;cursor:pointer}
+.sl{font-size:9px;color:var(--g8);flex:1}
+.sv{font-size:9px;color:var(--g8);width:26px;text-align:right;flex-shrink:0}
+input[type=range]{flex:1;accent-color:var(--g9);height:2px;cursor:pointer}
 /* Algo grid */
 .ag{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;margin-bottom:6px}
 .ag2{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:6px}
@@ -30,43 +108,50 @@ input[type=range]{flex:1;accent-color:#2a5090;height:2px;cursor:pointer}
 button{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;padding:5px 7px;border-radius:2px;border:1px solid;cursor:pointer;transition:opacity .1s;display:flex;align-items:center;gap:5px;white-space:nowrap}
 button:disabled{opacity:.2;cursor:default}
 button:not(:disabled):hover{opacity:.72}
-.b-run{background:#071510;border-color:#2a7050;color:#34d399}
-.b-neu{background:#0a1628;border-color:#1e3a58;color:#5a7a9a}
+.b-run{background:var(--g10);border-color:var(--g11);color:var(--g12)}
+.b-neu{background:var(--g13);border-color:var(--g14);color:var(--g15)}
 .br{display:flex;gap:4px}
 .br button{flex:1;justify-content:center}
 /* Maze gen buttons */
-.mg{background:#0a1628;border:1px solid #1e3a58;color:#5a8ab0;font-size:8px;padding:5px 4px;border-radius:2px;cursor:pointer;text-align:center;transition:all .1s;font-family:'JetBrains Mono',monospace;font-weight:500}
-.mg.active{background:#0a1e36;border-color:#1e4070;color:#6090c8}
+.mg{background:var(--g13);border:1px solid var(--g14);color:var(--g16);font-size:8px;padding:5px 4px;border-radius:2px;cursor:pointer;text-align:center;transition:all .1s;font-family:'JetBrains Mono',monospace;font-weight:500}
+.mg.active{background:var(--g17);border-color:var(--g18);color:var(--g19)}
 .mg:hover{opacity:.8}
 /* Navigation algo buttons */
-.na{background:#0a1628;border:1px solid #1e3a58;color:#5a8ab0;font-size:8px;padding:5px 4px;border-radius:2px;cursor:pointer;text-align:center;font-family:'JetBrains Mono',monospace;font-weight:600;letter-spacing:.04em;transition:all .1s}
-.na-gsn.active{background:#12090a;border-color:#7a3a00;color:#fbbf24}
-.na-spn.active{background:#010f08;border-color:#065040;color:#34d399}
-.na-rnd.active{background:#09051a;border-color:#30186a;color:#a78bfa}
-.na-man{background:#0a1628;border:1px solid #1e3a58;color:#5a8ab0;font-size:8px;padding:5px 4px;border-radius:2px;cursor:pointer;text-align:center;font-family:'JetBrains Mono',monospace;font-weight:600;letter-spacing:.04em;transition:all .1s;grid-column:1/-1;margin-top:2px}
-.na-man.active{background:#0e1a10;border-color:#4a9060;color:#86efac}
-.na-man.playing{background:#0e1810;border-color:#1a5030;color:#4ade80;animation:pulse 1.2s ease-in-out infinite}
+.na{background:var(--g13);border:1px solid var(--g14);color:var(--g16);font-size:8px;padding:5px 4px;border-radius:2px;cursor:pointer;text-align:center;font-family:'JetBrains Mono',monospace;font-weight:600;letter-spacing:.04em;transition:all .1s}
+.na-gsn.active{background:var(--g20);border-color:var(--g21);color:var(--g22)}
+.na-spn.active{background:var(--g23);border-color:var(--g24);color:var(--g12)}
+.na-rnd.active{background:var(--g25);border-color:var(--g26);color:var(--g27)}
+.na-man{background:var(--g13);border:1px solid var(--g14);color:var(--g16);font-size:8px;padding:5px 4px;border-radius:2px;cursor:pointer;text-align:center;font-family:'JetBrains Mono',monospace;font-weight:600;letter-spacing:.04em;transition:all .1s;grid-column:1/-1;margin-top:2px}
+.na-man.active{background:var(--g28);border-color:var(--g29);color:var(--g30)}
+.na-man.playing{background:var(--g31);border-color:var(--g32);color:var(--g33);animation:pulse 1.2s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
-.avail-hint{font-size:7px;color:#4a7090;margin-top:5px;text-align:center;line-height:1.6}
+.avail-hint{font-size:7px;color:var(--g8);margin-top:5px;text-align:center;line-height:1.6}
 .na:hover{opacity:.8}
 /* Stats */
 .sg{display:grid;grid-template-columns:1fr auto;row-gap:3px;font-size:9px}
-.sg .l{color:#4a7090}.sg .v{text-align:right;color:#406880;font-weight:500}
-.sg .va{color:#34d399}.sg .sep{grid-column:1/-1;height:1px;background:#091828;margin:2px 0}
+.sg .l{color:var(--g8)}.sg .v{text-align:right;color:var(--g34);font-weight:500}
+.sg .va{color:var(--g12)}.sg .sep{grid-column:1/-1;height:1px;background:var(--g6);margin:2px 0}
 /* Log */
 #log-wrap{flex:1;overflow-y:auto;min-height:40px}
 #log{padding:8px 13px;font-size:8px;line-height:1.85}
 .le{display:flex;align-items:center;gap:4px}
-.li{color:#3a5570;width:22px;text-align:right;flex-shrink:0;font-size:7px}
-.lf{color:#4a7090}.lb{color:#a05050}.la{color:#4a9060}.ls{color:#5a7090}
-#status{padding:5px 13px;border-top:1px solid #091828;font-size:8px;color:#4a7595;flex-shrink:0;min-height:22px}
+.li{color:var(--g35);width:22px;text-align:right;flex-shrink:0;font-size:7px}
+.lf{color:var(--g8)}.lb{color:var(--g36)}.la{color:var(--g29)}.ls{color:var(--g37)}
+#status{padding:5px 13px;border-top:1px solid var(--g6);font-size:8px;color:var(--g4);flex-shrink:0;min-height:22px}
+</style>
+<style id="theme-toggle-fit">
+/* fit the theme toggle into this page's header bar */
+#theme-toggle{top:calc(env(safe-area-inset-top,0px) + 3px);right:calc(env(safe-area-inset-right,0px) + 8px);width:26px;height:26px;box-shadow:none}
+#theme-toggle svg{width:14px;height:14px}
+header{padding-right:46px !important}
+@media (max-width:760px){:root:root{padding-top:env(safe-area-inset-top,0px)}}
 </style>
 </head>
 <body>
 <header>
   <h1>Maze Navigator</h1>
-  <span class="sub">GSN vs SPN vs Random DFS &nbsp;·&nbsp; <a href="https://link.aps.org/doi/10.1103/PhysRevLett.108.128701" target="_blank" style="color:#4a7595;text-decoration:none" onmouseover="this.style.color='#80b0d8'" onmouseout="this.style.color='#4a7595'">Sang Hoon Lee &amp; Petter Holme · <em>Phys. Rev. Lett.</em> 108, 128701 (2012)</a></span>
-  <span class="sub" style="margin-left:auto;color:#3a5878">Demo by Claude Sonnet 4.6</span>
+  <span class="sub">GSN vs SPN vs Random DFS &nbsp;·&nbsp; <a href="https://link.aps.org/doi/10.1103/PhysRevLett.108.128701" target="_blank" style="color:var(--g4);text-decoration:none" onmouseover="this.style.color='#80b0d8'" onmouseout="this.style.color='#4a7595'">Sang Hoon Lee &amp; Petter Holme · <em>Phys. Rev. Lett.</em> 108, 128701 (2012)</a></span>
+  <span class="sub" style="margin-left:auto;color:var(--g38)">Demo by Claude Sonnet 4.6</span>
 </header>
 <main>
 <div id="cv-wrap">
@@ -114,12 +199,12 @@ button:not(:disabled):hover{opacity:.72}
   <div class="sec">
     <div class="sh">Results</div>
     <div class="sg">
-      <span class="l" style="color:#86efac">You &nbsp;&nbsp;— your steps</span><span class="v" id="r-man">—</span>
-      <span class="l" style="color:#86efac99">↳ backtracks</span><span class="v" id="r-mbt">—</span>
+      <span class="l" style="color:var(--g30)">You &nbsp;&nbsp;— your steps</span><span class="v" id="r-man">—</span>
+      <span class="l" style="color:var(--g39)">↳ backtracks</span><span class="v" id="r-mbt">—</span>
       <div class="sep"></div>
-      <span class="l" style="color:#c09030">d_g — GSN steps</span><span class="v" id="r-gsn">—</span>
-      <span class="l" style="color:#2a9060">d &nbsp;— shortest path</span><span class="v" id="r-spn">—</span>
-      <span class="l" style="color:#8060c0">d_r — random DFS</span><span class="v" id="r-rnd">—</span>
+      <span class="l" style="color:var(--g40)">d_g — GSN steps</span><span class="v" id="r-gsn">—</span>
+      <span class="l" style="color:var(--g41)">d &nbsp;— shortest path</span><span class="v" id="r-spn">—</span>
+      <span class="l" style="color:var(--g42)">d_r — random DFS</span><span class="v" id="r-rnd">—</span>
       <span class="l">backtracks</span><span class="v" id="r-bt">—</span>
       <div class="sep"></div>
       <span class="l va">ν = d / d_g</span><span class="v va" id="r-nu">—</span>
@@ -128,20 +213,23 @@ button:not(:disabled):hover{opacity:.72}
 
   <div class="sec" style="padding-bottom:6px;flex-shrink:0">
     <div class="sh">How it works</div>
-    <div style="font-size:8px;color:#4a7090;line-height:1.65">
-      <b style="color:#fbbf24">GSN</b> always moves to the unvisited neighbor whose direction most closely aligns with the target — angle θ between v<sub>i→t</sub> and v<sub>i→j</sub>. Backtracks only when all neighbors visited.<br><br>
-      <b style="color:#34d399">SPN</b> follows the guaranteed optimal path (BFS). Requires complete map knowledge.<br><br>
-      <b style="color:#a78bfa">Random DFS</b> is a self-avoiding walk — random unvisited neighbor each step, backtracking only when truly stuck.
+    <div style="font-size:8px;color:var(--g8);line-height:1.65">
+      <b style="color:var(--g22)">GSN</b> always moves to the unvisited neighbor whose direction most closely aligns with the target — angle θ between v<sub>i→t</sub> and v<sub>i→j</sub>. Backtracks only when all neighbors visited.<br><br>
+      <b style="color:var(--g12)">SPN</b> follows the guaranteed optimal path (BFS). Requires complete map knowledge.<br><br>
+      <b style="color:var(--g27)">Random DFS</b> is a self-avoiding walk — random unvisited neighbor each step, backtracking only when truly stuck.
     </div>
   </div>
 
-  <div style="border-bottom:1px solid #091828;padding:5px 13px;font-size:7px;color:#3a5570;flex-shrink:0">PATH LOG</div>
+  <div style="border-bottom:1px solid var(--g6);padding:5px 13px;font-size:7px;color:var(--g35);flex-shrink:0">PATH LOG</div>
   <div id="log-wrap"><div id="log"></div></div>
   <div id="status">Generate a maze, then click two cells.</div>
 </div>
 </main>
 
 <script>
+var K={dark:true};function readK(){var cs=getComputedStyle(document.documentElement);K.dark=document.documentElement.getAttribute('data-theme')==='dark';for(var i=0;i<48;i++)K['g'+i]=cs.getPropertyValue('--g'+i).trim();}readK();
+new MutationObserver(function(){readK();try{draw()}catch(e){console.error(e)}}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
 // ── Canvas ────────────────────────────────────────────────────────
 const canvas=document.getElementById('maze'), ctx=canvas.getContext('2d');
 function resize(){ const w=document.getElementById('cv-wrap'); canvas.width=w.clientWidth; canvas.height=w.clientHeight; }
@@ -253,7 +341,7 @@ function canvasToCell(mx,my,cs,ox,oy){const x=Math.floor((mx-ox)/cs),y=Math.floo
 
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle='#060c18';ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle=K.g0;ctx.fillRect(0,0,canvas.width,canvas.height);
   if(!maze)return;
 
   const cs=getCellSize(),{ox,oy}=getOff(cs);
@@ -264,23 +352,23 @@ function draw(){
   if(fullPath.length&&animAt>0)for(let i=0;i<=animAt&&i<fullPath.length;i++)visitedSet.add(fullPath[i].node);
   const curNode=fullPath.length&&animAt<fullPath.length?fullPath[animAt].node:null;
 
-  const algoCol=algoName==='gsn'?'#fbbf24':algoName==='spn'?'#34d399':'#a78bfa';
+  const algoCol=algoName==='gsn'?K.g22:algoName==='spn'?K.g12:K.g27;
 
   // Cell fills
   for(let i=0;i<maze.N;i++){
     const{x,y}=cellToXY(i,cs,ox,oy);
     // Available moves in manual mode
     if(manMode&&manCur!==null&&maze.adj[manCur].includes(i)&&i!==manCur){
-      ctx.fillStyle='#86efac18';ctx.fillRect(x+1,y+1,cs-1,cs-1);
-    } else if(i===srcCell){ctx.fillStyle='#f87171';ctx.fillRect(x+1,y+1,cs-1,cs-1);}
-    else if(i===tgtCell){ctx.fillStyle='#4ade80';ctx.fillRect(x+1,y+1,cs-1,cs-1);}
+      ctx.fillStyle=K.g43;ctx.fillRect(x+1,y+1,cs-1,cs-1);
+    } else if(i===srcCell){ctx.fillStyle=K.g44;ctx.fillRect(x+1,y+1,cs-1,cs-1);}
+    else if(i===tgtCell){ctx.fillStyle=K.g33;ctx.fillRect(x+1,y+1,cs-1,cs-1);}
     else if(i===curNode){ctx.fillStyle=algoCol+'40';ctx.fillRect(x+1,y+1,cs-1,cs-1);}
     else if(visitedSet.has(i)){ctx.fillStyle=algoCol+'14';ctx.fillRect(x+1,y+1,cs-1,cs-1);}
-    else{ctx.fillStyle='#0a1628';ctx.fillRect(x+1,y+1,cs-1,cs-1);}
+    else{ctx.fillStyle=K.g13;ctx.fillRect(x+1,y+1,cs-1,cs-1);}
   }
 
   // Walls
-  ctx.strokeStyle='#2a5090';ctx.lineWidth=wt;
+  ctx.strokeStyle=K.g9;ctx.lineWidth=wt;
   // Outer border
   ctx.strokeRect(ox-wt/2,oy-wt/2,W*cs+wt,H*cs+wt);
   // Internal walls
@@ -292,7 +380,7 @@ function draw(){
 
   // Manual path drawing
   if(manMode||manPath.length>0){
-    const manCol='#86efac';
+    const manCol=K.g30;
     const fwdE=[],btE=[];
     for(let i=1;i<manPath.length;i++){
       (manPath[i].type==='backtrack'?btE:fwdE).push([manPath[i-1].node,manPath[i].node]);
@@ -302,7 +390,7 @@ function draw(){
       const pa=cellToXY(a,cs,ox,oy),pb=cellToXY(b,cs,ox,oy);
       ctx.beginPath();ctx.moveTo(pa.x+cs/2,pa.y+cs/2);ctx.lineTo(pb.x+cs/2,pb.y+cs/2);ctx.stroke();
     }
-    ctx.strokeStyle='#ef444455';ctx.lineWidth=Math.max(1,cs/6);ctx.setLineDash([cs/4,cs/4]);
+    ctx.strokeStyle=K.g45;ctx.lineWidth=Math.max(1,cs/6);ctx.setLineDash([cs/4,cs/4]);
     for(const[a,b]of btE){
       const pa=cellToXY(a,cs,ox,oy),pb=cellToXY(b,cs,ox,oy);
       ctx.beginPath();ctx.moveTo(pa.x+cs/2,pa.y+cs/2);ctx.lineTo(pb.x+cs/2,pb.y+cs/2);ctx.stroke();
@@ -312,8 +400,8 @@ function draw(){
     if(manCur!==null&&manCur!==srcCell&&manCur!==tgtCell){
       const{x,y}=cellToXY(manCur,cs,ox,oy);
       ctx.beginPath();ctx.arc(x+cs/2,y+cs/2,Math.max(3,cs/3),0,Math.PI*2);
-      ctx.fillStyle='#86efac';ctx.fill();
-      ctx.strokeStyle='#ffffff40';ctx.lineWidth=1;ctx.stroke();
+      ctx.fillStyle=K.g30;ctx.fill();
+      ctx.strokeStyle=K.g46;ctx.lineWidth=1;ctx.stroke();
     }
   }
 
@@ -332,7 +420,7 @@ function draw(){
       ctx.moveTo(pa.x+cs/2,pa.y+cs/2);ctx.lineTo(pb.x+cs/2,pb.y+cs/2);ctx.stroke();
     }
     // Backtrack path (dashed, dimmer)
-    ctx.strokeStyle='#ef444455';ctx.lineWidth=Math.max(1,cs/6);ctx.setLineDash([cs/4,cs/4]);
+    ctx.strokeStyle=K.g45;ctx.lineWidth=Math.max(1,cs/6);ctx.setLineDash([cs/4,cs/4]);
     for(const[a,b]of btEdges){
       const pa=cellToXY(a,cs,ox,oy),pb=cellToXY(b,cs,ox,oy);
       ctx.beginPath();ctx.moveTo(pa.x+cs/2,pa.y+cs/2);ctx.lineTo(pb.x+cs/2,pb.y+cs/2);ctx.stroke();
@@ -349,13 +437,13 @@ function draw(){
   if(srcCell!==null){
     const{x,y}=cellToXY(srcCell,cs,ox,oy);
     ctx.font=`bold ${Math.max(8,Math.round(cs*.45))}px JetBrains Mono,monospace`;
-    ctx.fillStyle='#060c18';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillStyle=K.g0;ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText('S',x+cs/2,y+cs/2);
   }
   if(tgtCell!==null){
     const{x,y}=cellToXY(tgtCell,cs,ox,oy);
     ctx.font=`bold ${Math.max(8,Math.round(cs*.45))}px JetBrains Mono,monospace`;
-    ctx.fillStyle='#060c18';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillStyle=K.g0;ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText('T',x+cs/2,y+cs/2);
   }
 
@@ -390,7 +478,7 @@ function drawAngleViz(node,cs,ox,oy,col){
     const angle=angTo(cellPos(node),cellPos(tgtCell),cellPos(n));
     const isMin=maze.adj[node].every(nn=>nn===n||angTo(cellPos(node),cellPos(tgtCell),cellPos(nn))>=angle);
     ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+jx/jMag*cs*.4,py+jy/jMag*cs*.4);
-    ctx.strokeStyle=isMin?col+'cc':'#1a3a5040';ctx.lineWidth=isMin?1.2:.6;ctx.stroke();
+    ctx.strokeStyle=isMin?col+'cc':K.g47;ctx.lineWidth=isMin?1.2:.6;ctx.stroke();
   }
 }
 
@@ -507,7 +595,7 @@ function updateLog(path){
   if(!path||!path.length){el.innerHTML='';return;}
   const show=path.length>150?path.slice(-150):path;
   const off=path.length-show.length;
-  el.innerHTML=(off>0?`<div style="font-size:7px;color:#3a5570;margin-bottom:3px">… ${off} earlier steps</div>`:'')+
+  el.innerHTML=(off>0?`<div style="font-size:7px;color:var(--g35);margin-bottom:3px">… ${off} earlier steps</div>`:'')+
     show.map((s,i)=>{
       const idx=i+off;
       const cls=s.type==='backtrack'?'lb':s.type==='arrive'?'la':s.type==='start'?'ls':'lf';
