@@ -12,7 +12,7 @@
   function effective(){return saved()||(sys&&sys.matches?'dark':'light')}
   function apply(){root.setAttribute('data-theme',effective());root.style.colorScheme=effective()}
   apply();
-  // Pages listen for OS colour-scheme changes to redraw their canvases; make those
+  // Pages listen for OS color-scheme changes to redraw their canvases; make those
   // listeners (and .matches checks) follow the chosen theme instead of the OS alone.
   if(nativeMM){
     window.matchMedia=function(q){
@@ -71,6 +71,7 @@
 @media print{#theme-toggle{display:none}}
 </style>
 <!-- theme-toggle:end -->
+
 
 
 <style>
@@ -511,7 +512,7 @@ canvas.addEventListener('click',e=>{
   document.getElementById('btn-man').classList.remove('active','playing');
   if(n===srcCell){
     srcCell=null;tgtCell=null;enableNav(false);
-    status('S cancelled. Click any cell to set a new source.');
+    status('S canceled. Click any cell to set a new source.');
   } else if(srcCell===null){
     srcCell=n;status(`Source S = cell ${n}. Click another cell for target.`);
   } else if(tgtCell===null){

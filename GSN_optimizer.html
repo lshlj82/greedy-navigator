@@ -12,7 +12,7 @@
   function effective(){return saved()||(sys&&sys.matches?'dark':'light')}
   function apply(){root.setAttribute('data-theme',effective());root.style.colorScheme=effective()}
   apply();
-  // Pages listen for OS colour-scheme changes to redraw their canvases; make those
+  // Pages listen for OS color-scheme changes to redraw their canvases; make those
   // listeners (and .matches checks) follow the chosen theme instead of the OS alone.
   if(nativeMM){
     window.matchMedia=function(q){
@@ -71,6 +71,7 @@
 @media print{#theme-toggle{display:none}}
 </style>
 <!-- theme-toggle:end -->
+
 
 
 <style>
@@ -490,7 +491,7 @@ function drawGSNOverlay(ctx,canvas,dp,path,color){
 
     const curNode=path[upTo].node;
 
-    // Tier 2: visited nodes — coloured fill (overrides base grey nodes)
+    // Tier 2: visited nodes — colored fill (overrides base gray nodes)
     ctx.fillStyle=color+'55';ctx.strokeStyle=color+'44';ctx.lineWidth=.5;ctx.beginPath();
     for(const i of visited){
       if(i===gsnSrc||i===gsnTgt||i===curNode)continue;
@@ -531,7 +532,7 @@ function drawGSNOverlay(ctx,canvas,dp,path,color){
   }
 }
 
-// Angle viz: dashed arrow toward target + spokes to ALL neighbours,
+// Angle viz: dashed arrow toward target + spokes to ALL neighbors,
 // isMin checked globally (matching the original PRL demo exactly)
 function drawGSNAngleViz(ctx,cp,dp,nodeIdx,color){
   const pos=cp[nodeIdx],tPos=cp[gsnTgt];
@@ -548,7 +549,7 @@ function drawGSNAngleViz(ctx,cp,dp,nodeIdx,color){
   ctx.lineTo(ax-h*Math.cos(aAng+.5),ay-h*Math.sin(aAng+.5));
   ctx.closePath();ctx.fillStyle=color+'60';ctx.fill();
 
-  // Spokes to ALL neighbours; isMin among all (same logic as original demo)
+  // Spokes to ALL neighbors; isMin among all (same logic as original demo)
   for(const n of G.adj[nodeIdx]){
     const np=cp[n],jx=np.x-pos.x,jy=np.y-pos.y,jMag=Math.hypot(jx,jy);
     if(jMag<2)continue;
